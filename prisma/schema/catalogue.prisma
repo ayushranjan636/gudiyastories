@@ -1,0 +1,192 @@
+enum ProductType {
+  STORY
+  COLOURING
+  BUNDLE
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model Product {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  sku             String        @unique
+  title           String
+  type            ProductType
+  status          ProductStatus @default(DRAFT)
+  featured        Boolean       @default(false)
+  sortOrder       Int           @default(0)
+
+  shortDescription String
+  longDescription  Json?   // Tiptap JSON
+  longDescriptionHtml String?
+
+  ageMin          Int?
+  ageMax          Int?    // null with ageMin set means "ageMin+"
+  pages           Int?
+  binding         String?
+  paper           String?
+  isbn            String? @unique
+  publishedOn     DateTime? @db.Date
+  author          String  @default("S.V. Bharathi")
+  publisher       String  @default("Gudiya Stories")
+  language        String  @default("English")
+  countryOfOrigin String  @default("India")
+
+  pricePaise      Int
+  mrpPaise        Int
+  costPaise       Int?
+
+  weightGrams     Int?
+  lengthMm        Int?
+  widthMm         Int?
+  heightMm        Int?
+  hsnCode         String?
+
+  amazonUrl       String?
+  amazonSku       String?
+  flipkartUrl     String?
+  flipkartSku     String?
+
+  goodFor         String[] @default([])
+  // Colour for the 3D book spine, sampled from the cover.
+  spineColor      String?
+  seoTitle        String?
+  seoDescription  String?
+
+  lowStockThreshold Int    @default(10)
+
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  images          ProductImage[]
+  spreads         Spread[]
+  values          ProductValue[]
+  bundleItems     BundleItem[]  @relation("BundleParent")
+  inBundles       BundleItem[]  @relation("BundleComponent")
+  stockMovements  StockMovement[]
+  orderItems      OrderItem[]
+  reviews         Review[]
+  resources       Resource[]
+  relatedPosts    Post[]        @relation("PostRelatedProducts")
+
+  @@index([status, type])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String   @default("")
+  width     Int?
+  height    Int?
+  blurDataUrl String?
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([productId, position])
+}
+
+// A look-inside page or spread.
+model Spread {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String  @default("")
+  width     Int?
+  height    Int?
+  position  Int     @default(0)
+
+  @@index([productId, position])
+}
+
+model Value {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  description String
+  position    Int     @default(0)
+  products    ProductValue[]
+  coupons     Coupon[] @relation("CouponValues")
+}
+
+model ProductValue {
+  productId String
+  valueId   String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  value     Value   @relation(fields: [valueId], references: [id], onDelete: Cascade)
+
+  @@id([productId, valueId])
+}
+
+model BundleItem {
+  id          String  @id @default(cuid())
+  bundleId    String
+  componentId String
+  quantity    Int     @default(1)
+  bundle      Product @relation("BundleParent", fields: [bundleId], references: [id], onDelete: Cascade)
+  component   Product @relation("BundleComponent", fields: [componentId], references: [id], onDelete: Restrict)
+
+  @@unique([bundleId, componentId])
+}
+
+enum StockMovementType {
+  RESTOCK
+  SALE_WEBSITE
+  SALE_MARKETPLACE
+  SALE_OFFLINE
+  RETURN
+  DAMAGED
+  ADJUSTMENT
+}
+
+// Append-only ledger. Quantity is signed: +in, -out.
+model StockMovement {
+  id          String            @id @default(cuid())
+  productId   String
+  product     Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  type        StockMovementType
+  quantity    Int
+  reason      String?
+  note        String?
+  channel     SalesChannel?
+  orderId     String?
+  order       Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  adminUserId String?
+  adminUser   AdminUser?        @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+  createdAt   DateTime          @default(now()) @db.Timestamptz(3)
+
+  @@index([productId, createdAt])
+}
+
+model Review {
+  id          String       @id @default(cuid())
+  productId   String
+  product     Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItemId String       @unique
+  orderItem   OrderItem    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  customerId  String?
+  customer    Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  rating      Int
+  title       String?
+  body        String
+  displayName String
+  status      ReviewStatus @default(PENDING)
+  reply       String?
+  repliedAt   DateTime?    @db.Timestamptz(3)
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
+
+  @@index([productId, status])
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+}

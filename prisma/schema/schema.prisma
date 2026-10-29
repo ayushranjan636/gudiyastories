@@ -1,0 +1,15 @@
+// Gudiya Stories data model.
+// Conventions:
+// - Money is stored as integer paise (Int). ₹150 = 15000.
+// - All timestamps are UTC (timestamptz). Display in Asia/Kolkata.
+// - Stock on hand is never stored. It is the sum of StockMovement.quantity.
+// - Bundle stock is never stored. It is min(available of components / qty).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}

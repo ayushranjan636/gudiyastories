@@ -1,0 +1,222 @@
+enum PostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+}
+
+model Post {
+  id             String     @id @default(cuid())
+  slug           String     @unique
+  title          String
+  excerpt        String
+  content        Json       // Tiptap JSON
+  contentHtml    String     // rendered HTML
+  coverImageUrl  String?
+  coverImageAlt  String?
+  coverVideoUrl  String?    // optional video shown at the top of the post
+  status         PostStatus @default(DRAFT)
+  publishAt      DateTime?  @db.Timestamptz(3)
+  publishedAt    DateTime?  @db.Timestamptz(3)
+  readingMinutes Int        @default(1)
+  previewToken   String     @unique @default(cuid())
+  seoTitle       String?
+  seoDescription String?
+  ogImageUrl     String?
+  categoryId     String?
+  category       Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  authorId       String?
+  author         AdminUser? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt      DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime   @updatedAt @db.Timestamptz(3)
+
+  tags            Tag[]      @relation("PostTags")
+  relatedProducts Product[]  @relation("PostRelatedProducts")
+  revisions       PostRevision[]
+
+  @@index([status, publishedAt])
+}
+
+// Keep the last 10 per post (enforced in application code).
+model PostRevision {
+  id          String     @id @default(cuid())
+  postId      String
+  post        Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  title       String
+  excerpt     String
+  content     Json
+  contentHtml String
+  adminUserId String?
+  adminUser   AdminUser? @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+
+  @@index([postId, createdAt])
+}
+
+model Category {
+  id    String @id @default(cuid())
+  slug  String @unique
+  name  String
+  posts Post[]
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  slug  String @unique
+  name  String
+  posts Post[] @relation("PostTags")
+}
+
+enum ResourceKind {
+  AFTER_THE_STORY
+  COLOURING_PAGE
+  READING_TIP
+  OTHER
+}
+
+model Resource {
+  id            String       @id @default(cuid())
+  slug          String       @unique
+  title         String
+  description   String?
+  kind          ResourceKind
+  fileUrl       String
+  mimeType      String       @default("application/pdf")
+  fileSizeBytes Int?
+  // Email capture is always optional for the visitor. This toggle only
+  // controls whether the opt-in box is offered.
+  emailCapture  Boolean      @default(true)
+  published     Boolean      @default(false)
+  isPlaceholder Boolean      @default(false)
+  productId     String?
+  product       Product?     @relation(fields: [productId], references: [id], onDelete: SetNull)
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt @db.Timestamptz(3)
+
+  downloads     ResourceDownload[]
+}
+
+model ResourceDownload {
+  id           String      @id @default(cuid())
+  resourceId   String
+  resource     Resource    @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  subscriberId String?
+  subscriber   Subscriber? @relation(fields: [subscriberId], references: [id], onDelete: SetNull)
+  sessionId    String?
+  createdAt    DateTime    @default(now()) @db.Timestamptz(3)
+
+  @@index([resourceId, createdAt])
+}
+
+model Subscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  source         String?   // e.g. resource:after-the-story-donimalai
+  consentAt      DateTime  @default(now()) @db.Timestamptz(3)
+  unsubscribedAt DateTime? @db.Timestamptz(3)
+  customerId     String?   @unique
+  customer       Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+
+  downloads      ResourceDownload[]
+}
+
+enum EnquiryStage {
+  NEW
+  CONTACTED
+  SAMPLE_SENT
+  QUOTED
+  WON
+  LOST
+}
+
+enum OrganisationType {
+  SCHOOL
+  LIBRARY
+  NGO
+  COMPANY_CSR
+  BOOKSHOP
+  OTHER
+}
+
+model Enquiry {
+  id               String           @id @default(cuid())
+  organisation     String
+  organisationType OrganisationType
+  city             String
+  quantity         Int
+  titles           String[]         @default([]) // product SKUs or free text
+  budget           String?
+  timeline         String?
+  contactName      String
+  contactEmail     String
+  contactPhone     String
+  message          String?
+  wantsSamplePack  Boolean          @default(false)
+  wantsBookplate   Boolean          @default(false)
+  wantsAuthorVisit Boolean          @default(false)
+  stage            EnquiryStage     @default(NEW)
+  nextFollowUpOn   DateTime?        @db.Date
+  orderId          String?          @unique
+  order            Order?           @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  assignedToId     String?
+  assignedTo       AdminUser?       @relation("EnquiryAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdAt        DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime         @updatedAt @db.Timestamptz(3)
+
+  notes            EnquiryNote[]
+
+  @@index([stage, nextFollowUpOn])
+}
+
+model EnquiryNote {
+  id          String     @id @default(cuid())
+  enquiryId   String
+  enquiry     Enquiry    @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  body        String
+  adminUserId String?
+  adminUser   AdminUser? @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+}
+
+enum ClassStatus {
+  DRAFT     // only visible in admin
+  PUBLISHED // listed, enquiries open
+  CLOSED    // listed, marked "enquiries closed"
+}
+
+enum ClassMedia {
+  IMAGE
+  VIDEO   // uploaded file
+  YOUTUBE // YouTube link
+}
+
+/// Online classes and courses run by the author. Enquiries go to a Google Form.
+model OnlineClass {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  title       String
+  summary     String       // one or two sentences for cards and the pop-up
+  aboutHtml   String       @default("")
+  about       Json?        // editor JSON
+  topics      String[]     @default([])
+  audience    String?      // "Ages 4 to 7", "Parents and teachers"
+  mode        String?      // "Live on Google Meet"
+  schedule    String?      // "Saturdays, 5 to 6 pm"
+  startDate   DateTime?    @db.Date
+  duration    String       // "6 weeks, 12 sessions"
+  pricePaise  Int?         // empty = free
+  priceNote   String?      // "per child, all sessions"
+  enquiryUrl  String       // Google Form link
+  mediaKind   ClassMedia?
+  mediaUrl    String?
+  posterUrl   String?      // image shown before a video plays, and on cards
+  mediaAlt    String?
+  status      ClassStatus  @default(DRAFT)
+  isPopup     Boolean      @default(false) // at most one class at a time (enforced when saving)
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
+
+  @@index([status, startDate])
+}

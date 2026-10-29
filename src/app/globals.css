@@ -1,0 +1,547 @@
+@import "tailwindcss";
+
+/*
+  Gudiya Stories design tokens (brief section 3).
+  The book covers carry the colour. The interface stays quiet.
+  No gradients, no glassmorphism. Shadows only under books.
+*/
+
+:root {
+  --paper: #fbf8f1;
+  --paper-deep: #f2ebdd;
+  --ink: #1b1a17;
+  --ink-soft: #5a5650;
+  --line: #e4dccb;
+  --leaf: #2f6b2a;
+  /* Sampled from the logo PNG (scripts/derive-brand.mjs). Decoration only, never text. */
+  --lime: #65d428;
+  --clay: #b4532f;
+
+  --ease-page: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@theme inline {
+  /* Reset the default palette so only brand colours exist on the public site. */
+  --color-*: initial;
+  --color-paper: var(--paper);
+  --color-paper-deep: var(--paper-deep);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-line: var(--line);
+  --color-leaf: var(--leaf);
+  --color-leaf-deep: color-mix(in oklab, var(--leaf) 82%, var(--ink));
+  --color-lime: var(--lime);
+  --color-clay: var(--clay);
+  --color-white: #ffffff;
+
+  --font-display: var(--font-young-serif), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-hanken-grotesk), ui-sans-serif, system-ui, sans-serif;
+
+  /* Fluid type scale. Body 17–18px at 1.6. */
+  --text-label: 0.75rem;
+  --text-label--line-height: 1.4;
+  --text-label--letter-spacing: 0.08em;
+  --text-small: 0.9375rem;
+  --text-small--line-height: 1.55;
+  --text-body: clamp(1.0625rem, 1.03rem + 0.15vw, 1.125rem);
+  --text-body--line-height: 1.6;
+  --text-lead: clamp(1.1875rem, 1.1rem + 0.4vw, 1.375rem);
+  --text-lead--line-height: 1.55;
+  --text-h4: clamp(1.25rem, 1.18rem + 0.3vw, 1.4375rem);
+  --text-h4--line-height: 1.3;
+  --text-h3: clamp(1.5rem, 1.3rem + 0.9vw, 2rem);
+  --text-h3--line-height: 1.2;
+  --text-h2: clamp(2rem, 1.55rem + 2vw, 3.25rem);
+  --text-h2--line-height: 1.1;
+  --text-h2--letter-spacing: -0.01em;
+  --text-hero: clamp(2.5rem, 6vw, 5rem);
+  --text-hero--line-height: 1.04;
+  --text-hero--letter-spacing: -0.01em;
+
+  --container-content: 1200px;
+  --container-prose: 68ch;
+
+  --ease-page: var(--ease-page);
+  --animate-duration-page: 500ms;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    overflow-x: clip;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Grid items may shrink below their content (stops wide rows pushing the page sideways). */
+  .grid > * {
+    min-width: 0;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--lime) 45%, var(--paper));
+    color: var(--ink);
+  }
+
+  /* Visible focus rings in --leaf everywhere. */
+  :focus-visible {
+    outline: 2px solid var(--color-leaf);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Fixed paper grain over the whole page: SVG feTurbulence at ~3.5%. */
+  .paper-grain {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 240px 240px;
+  }
+
+  /* Small tracked labels are the only all-caps text allowed. */
+  .label-caps {
+    font-size: var(--text-label);
+    line-height: var(--text-label--line-height);
+    letter-spacing: var(--text-label--letter-spacing);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .content-grid {
+    width: 100%;
+    max-width: var(--container-content);
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 4vw, 2rem);
+  }
+}
+
+/* ---------- Sheets (native <dialog>: focus trap and Escape for free) ---------- */
+@layer components {
+  dialog.sheet-right,
+  dialog.sheet-full {
+    margin: 0;
+    max-width: none;
+    max-height: none;
+    border: 0;
+    padding: 0;
+    color: var(--ink);
+    background: var(--paper);
+    transition:
+      transform 420ms var(--ease-page),
+      opacity 300ms var(--ease-page),
+      overlay 420ms allow-discrete,
+      display 420ms allow-discrete;
+  }
+
+  dialog.sheet-right {
+    inset: 0 0 0 auto;
+    height: 100dvh;
+    width: min(28rem, 100vw);
+    transform: translateX(100%);
+    box-shadow: -24px 0 48px -32px rgb(27 26 23 / 0.35);
+  }
+  dialog.sheet-right[open] {
+    transform: translateX(0);
+  }
+  @starting-style {
+    dialog.sheet-right[open] {
+      transform: translateX(100%);
+    }
+  }
+
+  dialog.sheet-full {
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    opacity: 0;
+  }
+  dialog.sheet-full[open] {
+    opacity: 1;
+  }
+  @starting-style {
+    dialog.sheet-full[open] {
+      opacity: 0;
+    }
+  }
+
+  dialog::backdrop {
+    background: rgb(27 26 23 / 0);
+    transition:
+      background-color 300ms var(--ease-page),
+      overlay 420ms allow-discrete,
+      display 420ms allow-discrete;
+  }
+  dialog[open]::backdrop {
+    background: rgb(27 26 23 / 0.32);
+  }
+  @starting-style {
+    dialog[open]::backdrop {
+      background: rgb(27 26 23 / 0);
+    }
+  }
+
+  dialog.sheet-full[open] .menu-item {
+    animation: rise 520ms var(--ease-page) both;
+    animation-delay: calc(var(--i, 0) * 45ms + 60ms);
+  }
+
+  /* Pencil underline: a hand-drawn lime stroke under a word. */
+  .pencil {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'%3E%3Cpath d='M2 8.5C40 4 78 3.5 118 5.2C146 6.4 170 7.6 198 4.5' fill='none' stroke='%2365d428' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: 100% 0.32em;
+    background-position: 0 96%;
+    padding-bottom: 0.06em;
+  }
+
+  .hairline-top {
+    border-top: 1px solid var(--line);
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes flap {
+  0%,
+  86%,
+  100% {
+    transform: scaleX(1);
+  }
+  90% {
+    transform: scaleX(0.35);
+  }
+  94% {
+    transform: scaleX(1);
+  }
+  97% {
+    transform: scaleX(0.55);
+  }
+}
+
+/* ---------- Home hero intro (once per session; see components/home/hero.tsx) ---------- */
+html[data-intro="run"] .arch-letter {
+  animation: arch-in 520ms var(--ease-page) both;
+  animation-delay: calc(var(--i) * 52ms + 120ms);
+}
+html[data-intro="run"] .arch-draw {
+  stroke-dasharray: 420;
+  animation: arch-draw 1500ms var(--ease-page) both 120ms;
+}
+html[data-intro="run"] .hero-doll {
+  animation: doll-in 900ms var(--ease-page) both;
+}
+html[data-intro="run"] #hero-bfly-anchor {
+  opacity: 0;
+}
+#hero-bfly-anchor {
+  transition: opacity 200ms;
+}
+
+@keyframes arch-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes arch-draw {
+  from {
+    stroke-dashoffset: 420;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes doll-in {
+  from {
+    clip-path: inset(100% 0 0 0);
+    transform: translateY(18px);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    transform: none;
+  }
+}
+
+/* ---------- Scroll reveal (components/motion/reveal.tsx) ---------- */
+/* Hidden only when JS is running (html.js) and motion is allowed. */
+@media (prefers-reduced-motion: no-preference) {
+  html.js .reveal:not(.in) {
+    opacity: 0;
+    transform: translateY(var(--reveal-y, 12px));
+  }
+  html.js .reveal {
+    transition:
+      opacity 600ms var(--ease-page) var(--reveal-delay, 0s),
+      transform 700ms var(--ease-page) var(--reveal-delay, 0s);
+  }
+}
+
+/* ---------- Long-form text (notes, product descriptions) ---------- */
+@layer components {
+  .prose-notes {
+    font-size: var(--text-lead);
+    line-height: 1.7;
+  }
+  .prose-notes > * + * {
+    margin-top: 1.1em;
+  }
+  .prose-notes h2 {
+    font-size: var(--text-h3);
+    line-height: 1.2;
+    margin-top: 1.8em;
+  }
+  .prose-notes h3 {
+    font-size: var(--text-h4);
+    margin-top: 1.5em;
+  }
+  .prose-notes a {
+    color: var(--leaf);
+    text-decoration: underline;
+    text-decoration-color: var(--lime);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+  .prose-notes ul,
+  .prose-notes ol {
+    padding-left: 1.3em;
+  }
+  .prose-notes ul {
+    list-style: disc;
+  }
+  .prose-notes ol {
+    list-style: decimal;
+  }
+  .prose-notes li + li {
+    margin-top: 0.4em;
+  }
+  .prose-notes blockquote {
+    border-left: 3px solid var(--lime);
+    padding-left: 1.1em;
+    font-family: var(--font-display);
+    font-size: var(--text-h4);
+    line-height: 1.4;
+  }
+  .prose-notes img {
+    border-radius: 14px;
+  }
+  .prose-notes iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 14px;
+  }
+  .prose-notes video {
+    width: 100%;
+    max-height: 80vh;
+    border-radius: 14px;
+    background: #000;
+  }
+  .prose-notes .callout {
+    background: var(--paper-deep);
+    border-radius: 16px;
+    padding: 1.1em 1.3em;
+    font-size: var(--text-body);
+  }
+}
+
+/* Book card inside a note */
+.prose-notes .book-embed {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 1.1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  text-decoration: none;
+  color: var(--ink);
+  background: color-mix(in oklab, white 55%, transparent);
+  font-size: var(--text-body);
+  line-height: 1.45;
+}
+.prose-notes .book-embed:hover {
+  border-color: color-mix(in oklab, var(--ink) 30%, transparent);
+}
+.prose-notes .book-embed img {
+  border-radius: 2px;
+  box-shadow: 0 12px 20px -14px rgb(27 26 23 / 0.6);
+}
+.prose-notes .book-embed strong {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--text-h4);
+}
+.prose-notes .book-embed span span {
+  display: block;
+  color: var(--ink-soft);
+  font-size: var(--text-small);
+  margin-top: 0.2rem;
+}
+.prose-notes .book-embed em {
+  display: block;
+  font-style: normal;
+  color: var(--leaf);
+  font-weight: 500;
+  margin-top: 0.4rem;
+  font-size: var(--text-small);
+}
+.admin-editor .product-embed {
+  border: 1px dashed var(--leaf);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: var(--text-small);
+  color: var(--leaf);
+}
+
+@media print {
+  .paper-grain {
+    display: none;
+  }
+}
+
+/* The roaming butterfly (components/motion/butterfly-guide.tsx) takes over from the hero's static one. */
+html.guide-on #hero-bfly-anchor > svg {
+  visibility: hidden;
+}
+
+/* ---------- Page-turning book loader (components/motion/book-loader.tsx) ---------- */
+.book-loader {
+  position: relative;
+  width: 132px;
+  height: 84px;
+  perspective: 600px;
+}
+.book-loader__cover {
+  position: absolute;
+  top: 6px;
+  width: 64px;
+  height: 78px;
+  background: var(--leaf);
+  border-radius: 4px;
+}
+.book-loader__cover--l {
+  left: 2px;
+  border-radius: 6px 2px 2px 6px;
+}
+.book-loader__cover--r {
+  right: 2px;
+  border-radius: 2px 6px 6px 2px;
+}
+.book-loader__lines,
+.book-loader__page {
+  position: absolute;
+  top: 0;
+  width: 60px;
+  height: 78px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+}
+.book-loader__lines--l {
+  left: 6px;
+  border-radius: 4px 0 0 4px;
+}
+.book-loader__lines--r {
+  right: 6px;
+  border-radius: 0 4px 4px 0;
+}
+.book-loader__lines::before {
+  content: "";
+  position: absolute;
+  inset: 14px 10px;
+  background: repeating-linear-gradient(to bottom, var(--line) 0 2px, transparent 2px 9px);
+}
+.book-loader__page {
+  left: 66px;
+  z-index: 2;
+  border-radius: 0 4px 4px 0;
+  transform-origin: left center;
+  animation: page-turn 1.4s var(--ease-page) infinite;
+}
+@keyframes page-turn {
+  0% {
+    transform: rotateY(0deg);
+  }
+  55%,
+  100% {
+    transform: rotateY(-180deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .book-loader__page {
+    animation: none;
+  }
+}
+
+/* Covers fade up from a soft paper placeholder once loaded. */
+.img-fade {
+  opacity: 0;
+  transform: scale(0.985);
+  transition:
+    opacity 500ms var(--ease-page),
+    transform 700ms var(--ease-page);
+}
+.img-fade[data-loaded="true"] {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .img-fade {
+    opacity: 1;
+    transform: none;
+  }
+}

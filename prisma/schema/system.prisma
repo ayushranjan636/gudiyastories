@@ -1,0 +1,111 @@
+enum AdminRole {
+  OWNER
+  STAFF
+}
+
+model AdminUser {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  passwordHash   String
+  role           AdminRole @default(STAFF)
+  active         Boolean   @default(true)
+  failedLogins   Int       @default(0)
+  lockedUntil    DateTime? @db.Timestamptz(3)
+  lastLoginAt    DateTime? @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
+
+  auditLogs        AuditLog[]
+  stockMovements   StockMovement[]
+  ordersCreated    Order[]        @relation("OrderCreatedBy")
+  orderEvents      OrderEvent[]
+  refunds          Refund[]
+  posts            Post[]
+  postRevisions    PostRevision[]
+  enquiryNotes     EnquiryNote[]
+  enquiriesAssigned Enquiry[]     @relation("EnquiryAssignee")
+}
+
+// Auth.js magic-link tokens for optional customer accounts.
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime @db.Timestamptz(3)
+
+  @@id([identifier, token])
+}
+
+// Generic rate-limit buckets (login, checkout, forms).
+model RateLimit {
+  key       String   @id
+  count     Int      @default(0)
+  resetAt   DateTime @db.Timestamptz(3)
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  adminUserId String?
+  adminUser   AdminUser?  @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+  action      AuditAction
+  entity      String      // e.g. "Product"
+  entityId    String
+  before      Json?
+  after       Json?
+  createdAt   DateTime    @default(now()) @db.Timestamptz(3)
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+enum AnalyticsEventType {
+  page_view
+  product_view
+  add_to_bag
+  checkout_started
+  purchase
+  whatsapp_click
+  resource_download
+  enquiry_submitted
+  look_inside_opened
+  class_enquiry // meta: { class: slug, from: card | page | popup }
+}
+
+// Cookie-free, first-party analytics.
+// sessionId = hash(daily salt + IP + user agent). Raw IPs are never stored.
+model AnalyticsEvent {
+  id          String             @id @default(cuid())
+  type        AnalyticsEventType
+  sessionId   String
+  path        String
+  productId   String?
+  orderId     String?
+  valuePaise  Int?
+  referrer    String?
+  referrerHost String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmContent  String?
+  utmTerm     String?
+  device      String?            // mobile | tablet | desktop
+  country     String?
+  meta        Json?
+  createdAt   DateTime           @default(now()) @db.Timestamptz(3)
+
+  @@index([type, createdAt])
+  @@index([sessionId])
+  @@index([productId, type])
+}

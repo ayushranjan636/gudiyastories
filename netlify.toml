@@ -1,0 +1,21 @@
+# Netlify: website + admin (free plan). Full guide: docs/DEPLOY-NETLIFY.md
+#
+# Netlify detects Next.js and uses its official adapter (OpenNext) by itself.
+# Every push to the main branch deploys; `npm run db:deploy` updates the
+# database tables first, so the site and its database always match.
+
+[build]
+  command = "npm run db:deploy && npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+  NPM_FLAGS = "--no-audit --no-fund"
+
+# Scheduled jobs (Netlify Scheduled Functions, free). Times are UTC.
+[functions."payments-sweep"]
+  schedule = "*/5 * * * *"
+
+[functions."daily-job"]
+  schedule = "30 2 * * *"

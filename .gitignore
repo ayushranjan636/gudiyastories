@@ -1,0 +1,38 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# prisma generated client
+/src/generated/
+
+# env
+.env
+.env*.local
+
+# testing
+/coverage
+/playwright-report
+/test-results
+
+# misc
+.DS_Store
+*.pem
+.vercel
+npm-debug.log*
+
+# local sync archive from Claude
+/.claude-sync/
+
+# Local uploads (STORAGE_DRIVER=local)
+/storage
+
+# Original, full-size photos and videos (web copies live in /public)
+/assets-inbox/originals/
+
+# Netlify local state
+/.netlify/
