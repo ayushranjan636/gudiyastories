@@ -29,7 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             : status.kind === "test"
               ? "Payments: Razorpay test keys (this computer only). Nothing is charged. The live site needs live keys (rzp_live_…)."
               : !hasEmail()
-                ? "Order emails are off: customers get no confirmation and you get no new-order email. Set RESEND_API_KEY, EMAIL_FROM and OWNER_NOTIFICATION_EMAIL (docs/DEPLOY-NETLIFY.md)."
+                ? "Order emails are off: customers get no confirmation and you get no new-order email. Set RESEND_API_KEY and OWNER_NOTIFICATION_EMAIL on the server (docs/DEPLOY-EC2.md → Order emails)."
                 : null;
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[15rem_1fr]">

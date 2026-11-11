@@ -93,9 +93,34 @@ Then switch Cloudflare to **Full (strict)**.
 
 ## Order emails (Resend)
 
-1. [resend.com](https://resend.com) → Domains → Add `gudiyastories.com` → add the records it shows in Cloudflare as **DNS only** (grey cloud) → Verify.
-2. API Keys → Create → copy the key (`re_…`).
-3. On the server, set `RESEND_API_KEY` and `OWNER_NOTIFICATION_EMAIL` in `/srv/gudiya/shared/.env` and restart (commands above).
+After every **paid** order, two emails go out:
+
+| Email | To | From | Replies go to |
+| --- | --- | --- | --- |
+| Order confirmation + receipt link | the customer | `Gudiya Stories <orders@gudiyastories.com>` | `svbharathi@gudiyastories.com` (Zoho inbox) |
+| "New order GS-…" with items, phone, address, admin link | you (`OWNER_NOTIFICATION_EMAIL`) | same | same |
+
+**Setup (about 10 minutes):**
+
+1. Sign up at [resend.com](https://resend.com) (free: 3,000 emails/month, 100/day).
+2. **Domains → Add domain** → `gudiyastories.com` (any region).
+3. Resend shows **3 DNS records**. Add each one in **Cloudflare → DNS → Records**, exactly as shown and set to **DNS only (grey cloud)**:
+   - **TXT** `resend._domainkey` → a long `p=…` value (DKIM);
+   - **MX** `send` → `feedback-smtp….amazonses.com`, priority 10;
+   - **TXT** `send` → `v=spf1 include:amazonses.com ~all`.
+
+   They are on `send.` and `resend._domainkey`, so **Zoho email is not affected**. Don't change the existing MX or TXT on `@`.
+4. Back in Resend → **Verify**. It usually turns green within a few minutes.
+5. **API Keys → Create API key**: permission *Sending access*, domain `gudiyastories.com`. Copy the key (`re_…`); it's shown once.
+6. Turn it on on the server, which also sends you a test email:
+   ```bash
+   ssh -i ~/.ssh/gudiya-ec2.pem ubuntu@<server-ip> \
+     "bash /srv/gudiya/current/deploy/server/set-email.sh re_YOUR_KEY svbharathi@gudiyastories.com"
+   ```
+
+The yellow "Order emails are off" bar in Admin disappears once this is done.
+
+**Optional:** add a DMARC record in Cloudflare so the mail is trusted more: **TXT** `_dmarc` → `v=DMARC1; p=none; rua=mailto:svbharathi@gudiyastories.com`.
 
 ## Razorpay (live payments)
 

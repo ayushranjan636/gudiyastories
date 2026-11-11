@@ -9,7 +9,9 @@ export async function sendEmail({ to, subject, text, html }: { to: string; subje
   try {
     const { Resend } = await import("resend");
     const resend = new Resend(key);
-    const res = await resend.emails.send({ from, to, subject, text, html: html ?? undefined });
+    // Customer replies go to the shop inbox (Zoho), not to the sending address.
+    const replyTo = process.env.EMAIL_REPLY_TO?.trim() || SITE.email;
+    const res = await resend.emails.send({ from, to, subject, text, html: html ?? undefined, replyTo });
     if (res.error) console.error("[email] not sent:", subject, res.error.message);
     return { sent: !res.error };
   } catch (err) {
