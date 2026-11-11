@@ -10,7 +10,7 @@ import { hasDatabase } from "@/server/env";
  *     database with the secrets encrypted (AES-256-GCM, key derived from AUTH_SECRET).
  *
  * As soon as valid keys are present, checkout takes real payments through Razorpay.
- * There is no pretend gateway: no keys means no online payment (COD / WhatsApp only).
+ * There is no pretend gateway: no keys means checkout is closed.
  */
 
 export type RazorpayCredentials = {

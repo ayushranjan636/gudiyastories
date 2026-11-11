@@ -17,8 +17,9 @@ function client(): PrismaClient {
   if (!connectionString) throw new DatabaseNotConfiguredError();
   // On serverless hosts (Netlify) every function instance has its own pool, so keep
   // each one small and let the Supabase pooler (port 6543) share real connections.
+  // The local database (`prisma dev`) accepts one connection at a time.
   const serverless = Boolean(process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL);
-  const max = Number(process.env.DATABASE_POOL_MAX) || (serverless ? 2 : 10);
+  const max = Number(process.env.DATABASE_POOL_MAX) || (process.env.LOCAL_DB === "prisma-dev" ? 1 : serverless ? 2 : 10);
   const c = new PrismaClient({ adapter: new PrismaPg({ connectionString, max, idleTimeoutMillis: 10_000, connectionTimeoutMillis: 10_000 }) });
   globalForPrisma.prisma = c;
   return c;

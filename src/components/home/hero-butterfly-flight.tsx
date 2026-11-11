@@ -12,9 +12,21 @@ type Path = { x: number[]; y: number[]; rotate: number[]; size: number };
  */
 export function HeroButterflyFlight() {
   const [path, setPath] = useState<Path | null>(null);
+  const [ready, setReady] = useState(0);
 
   useEffect(() => {
     const root = document.documentElement;
+    // After the welcome scene, wait for it to hand over.
+    if (root.dataset.intro === "splash") {
+      const mo = new MutationObserver(() => {
+        if (root.dataset.intro !== "splash") {
+          mo.disconnect();
+          setReady((n) => n + 1);
+        }
+      });
+      mo.observe(root, { attributes: true, attributeFilter: ["data-intro"] });
+      return () => mo.disconnect();
+    }
     if (root.dataset.intro !== "run") return;
     const section = document.getElementById("hero");
     const start = document.getElementById("hero-bfly-start");
@@ -43,7 +55,7 @@ export function HeroButterflyFlight() {
       }),
     );
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [ready]);
 
   if (!path) return null;
 

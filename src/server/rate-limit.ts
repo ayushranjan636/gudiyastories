@@ -5,9 +5,18 @@ import { hasDatabase } from "./env";
 
 const memory = new Map<string, { count: number; resetAt: number }>();
 
+/**
+ * The visitor's real IP. On Netlify only its own header is trusted; anything a
+ * visitor sends themselves (like a made-up X-Forwarded-For) would let them dodge
+ * rate limits. Elsewhere the reverse proxy in front of the site sets X-Real-IP.
+ */
+export function clientIp(h: Headers) {
+  if (process.env.NETLIFY) return h.get("x-nf-client-connection-ip") || "unknown";
+  return h.get("x-real-ip") || h.get("x-forwarded-for")?.split(",").at(-1)?.trim() || "unknown";
+}
+
 export async function clientKey(scope: string) {
-  const h = await headers();
-  const ip = h.get("x-nf-client-connection-ip") || h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
+  const ip = clientIp(await headers());
   return `${scope}:${createHash("sha256").update(ip).digest("hex").slice(0, 24)}`;
 }
 
@@ -25,11 +34,13 @@ export async function rateLimit(key: string, limit: number, windowSeconds: numbe
   }
   const { db } = await import("./db");
   const resetAt = new Date(now + windowSeconds * 1000);
-  const existing = await db.rateLimit.findUnique({ where: { key } });
-  if (!existing || existing.resetAt.getTime() < now) {
-    await db.rateLimit.upsert({ where: { key }, create: { key, count: 1, resetAt }, update: { count: 1, resetAt } });
-    return true;
-  }
-  const updated = await db.rateLimit.update({ where: { key }, data: { count: { increment: 1 } } });
-  return updated.count <= limit;
+  // One atomic statement, so a burst of parallel requests can't slip past the limit:
+  // start a new window if the old one ran out, otherwise count one more.
+  const rows = await db.$queryRaw<{ count: number }[]>`
+    INSERT INTO "RateLimit" ("key", "count", "resetAt") VALUES (${key}, 1, ${resetAt})
+    ON CONFLICT ("key") DO UPDATE SET
+      "count"   = CASE WHEN "RateLimit"."resetAt" < now() THEN 1 ELSE "RateLimit"."count" + 1 END,
+      "resetAt" = CASE WHEN "RateLimit"."resetAt" < now() THEN EXCLUDED."resetAt" ELSE "RateLimit"."resetAt" END
+    RETURNING "count"`;
+  return (rows[0]?.count ?? 1) <= limit;
 }

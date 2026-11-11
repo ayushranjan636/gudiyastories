@@ -18,6 +18,8 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
   const [{ number }, { t }] = await Promise.all([params, searchParams]);
   const o = await getPublicOrder(number, undefined, t);
   if (!o || !o.address) notFound();
+  // No receipt for a checkout that was never paid.
+  if (o.status === "PENDING_PAYMENT" || o.status === "EXPIRED") notFound();
   const store = await getSetting<{ address: string | null; gstin?: string | null }>("store");
   const paid = o.payment?.status === "CAPTURED" || o.payment?.status === "PARTIALLY_REFUNDED";
 

@@ -215,7 +215,7 @@ export default async function BookPage({ params }: Params) {
         </section>
       ) : null}
 
-      {IN_USE[p.slug]?.length ? <InUseStrip items={IN_USE[p.slug]!} title={p.title} /> : null}
+      {IN_USE[p.slug]?.length ? <InUseStrip items={IN_USE[p.slug]!} title={p.title} heading={p.type === "STORY" ? "In readers' hands" : "See it in use"} /> : null}
 
       {reviews.length ? (
         <section aria-labelledby="reviews-title" className="content-grid py-16">

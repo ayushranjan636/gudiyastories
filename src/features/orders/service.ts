@@ -117,7 +117,9 @@ export async function confirmOrder(
   });
 
   if (result.changed) {
-    void sendOrderEmails(orderId);
+    // Awaited (not fire-and-forget): on serverless hosts unfinished work is cut off
+    // once the response is sent. Failures are retried by the payment check.
+    await sendOrderEmails(orderId).catch((err) => console.error("[email] order", orderId, err));
     // Stock changed, so cached book pages (sold-out states) need a refresh.
     try {
       revalidatePath("/", "layout");
@@ -130,9 +132,15 @@ export async function confirmOrder(
 
 const esc = (v: string) => v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-async function sendOrderEmails(orderId: string) {
+/**
+ * Two emails per paid order: a confirmation and receipt to the customer, and a
+ * "new order" notice to the shop. Each is sent at most once (recorded on the
+ * order); one that failed is retried by retryOrderEmails().
+ */
+export async function sendOrderEmails(orderId: string) {
   const o = await db.order.findUnique({ where: { id: orderId }, include: { items: true, payments: true } });
-  if (!o) return;
+  if (!o || o.status === "PENDING_PAYMENT" || o.status === "EXPIRED") return;
+  if (o.customerEmailedAt && o.ownerEmailedAt) return;
   const { orderLinks } = await import("./token");
   const links = orderLinks(o.number, SITE.url);
   const paid = o.payments.find((p) => p.status === "CAPTURED");
@@ -182,8 +190,54 @@ ${rows.map(([a, b]) => `<tr><td style="padding:6px 0;border-bottom:1px solid #F2
 </table><p style="font-size:12px;color:#5A5650;margin:16px 0 0">Gudiya Stories · Tirupati, Andhra Pradesh · ${SITE.phoneDisplay}</p>
 </td></tr></table></body></html>`;
 
-  if (o.contactEmail) await sendEmail({ to: o.contactEmail, subject: `Order ${o.number} confirmed`, text, html });
-  await sendEmail({ to: ownerEmail(), subject: `New order ${o.number}: ${formatINR(o.totalPaise)}`, text });
-  const { sendOrderWhatsApp } = await import("@/server/whatsapp");
-  await sendOrderWhatsApp(o.contactPhone, [first, o.number, formatINR(o.totalPaise)]);
+  const firstTime = !o.customerEmailedAt && !o.ownerEmailedAt;
+
+  if (!o.customerEmailedAt && o.contactEmail) {
+    const r = await sendEmail({ to: o.contactEmail, subject: `Order ${o.number} confirmed`, text, html });
+    if (r.sent) await db.order.update({ where: { id: o.id }, data: { customerEmailedAt: new Date() } });
+  }
+
+  if (!o.ownerEmailedAt) {
+    const adminLink = `${SITE.url.replace(/\/$/, "")}/admin/orders/${o.id}`;
+    const ownerText = [
+      `New paid order ${o.number}: ${formatINR(o.totalPaise)}`,
+      "",
+      ...rows.map(([a, b]) => `${a}  ${b}`),
+      `Total  ${formatINR(o.totalPaise)}`,
+      payLine,
+      "",
+      `Customer: ${o.contactName}`,
+      `Phone: ${o.contactPhone}`,
+      `Email: ${o.contactEmail ?? "(none)"}`,
+      `Ship to: ${address}`,
+      o.customerNote ? `Note from customer: ${o.customerNote}` : null,
+      "",
+      `Open in admin: ${adminLink}`,
+    ]
+      .filter((x) => x !== null)
+      .join("\n");
+    const r = await sendEmail({ to: ownerEmail(), subject: `New order ${o.number}: ${formatINR(o.totalPaise)}`, text: ownerText });
+    if (r.sent) await db.order.update({ where: { id: o.id }, data: { ownerEmailedAt: new Date() } });
+  }
+
+  if (firstTime) {
+    const { sendOrderWhatsApp } = await import("@/server/whatsapp");
+    await sendOrderWhatsApp(o.contactPhone, [first, o.number, formatINR(o.totalPaise)]).catch(() => {});
+  }
+}
+
+/** Paid orders from the last 3 days whose emails didn't go out (email service down, timeout). */
+export async function retryOrderEmails() {
+  const pending = await db.order.findMany({
+    where: {
+      status: { notIn: ["PENDING_PAYMENT", "EXPIRED"] },
+      // Older than 2 minutes, so this never races the first send right after payment.
+      paidAt: { gte: new Date(Date.now() - 3 * 24 * 3600_000), lte: new Date(Date.now() - 2 * 60_000) },
+      OR: [{ customerEmailedAt: null, contactEmail: { not: null } }, { ownerEmailedAt: null }],
+    },
+    select: { id: true },
+    take: 20,
+  });
+  for (const o of pending) await sendOrderEmails(o.id).catch((err) => console.error("[email] retry", o.id, err));
+  return pending.length;
 }

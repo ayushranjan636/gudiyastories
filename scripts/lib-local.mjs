@@ -43,6 +43,7 @@ export async function ensureSchemaAndSeed(env) {
       seeded = true;
     }
     await importPosts(client);
+    await importSpreads(client);
     return seeded;
   } finally {
     await client.end();
@@ -138,6 +139,42 @@ export async function importPosts(client) {
       throw err;
     }
   }
+  return added;
+}
+
+/**
+ * "Look inside" pages added after a book was first seeded (prisma/content/spreads.json).
+ * Each page is added once, just before the page named in `before` (usually the
+ * back cover). Pages already there, and pages added in Admin, are left alone.
+ */
+export async function importSpreads(client) {
+  const file = path.join(root, "prisma", "content", "spreads.json");
+  if (!fs.existsSync(file)) return 0;
+  const { randomBytes } = await import("node:crypto");
+  let added = 0;
+  for (const s of JSON.parse(fs.readFileSync(file, "utf8"))) {
+    const { rows: prod } = await client.query(`SELECT id FROM "Product" WHERE slug = $1`, [s.product]);
+    if (!prod.length) continue;
+    const productId = prod[0].id;
+    const { rows: has } = await client.query(`SELECT 1 FROM "Spread" WHERE "productId" = $1 AND url = $2`, [productId, s.src]);
+    if (has.length) continue;
+    const { rows: anchor } = await client.query(`SELECT position FROM "Spread" WHERE "productId" = $1 AND url = $2`, [productId, s.before ?? ""]);
+    const { rows: max } = await client.query(`SELECT COALESCE(MAX(position), -1) AS m FROM "Spread" WHERE "productId" = $1`, [productId]);
+    const position = anchor.length ? anchor[0].position : max[0].m + 1;
+    await client.query("BEGIN");
+    try {
+      if (anchor.length) await client.query(`UPDATE "Spread" SET position = position + 1 WHERE "productId" = $1 AND position >= $2`, [productId, position]);
+      await client.query(`INSERT INTO "Spread" (id, "productId", url, alt, width, height, position) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [
+        `c${randomBytes(12).toString("hex")}`, productId, s.src, s.alt ?? "", s.width ?? null, s.height ?? null, position,
+      ]);
+      await client.query("COMMIT");
+      added++;
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    }
+  }
+  if (added) say(`Added ${added} "Look inside" page${added === 1 ? "" : "s"}.`);
   return added;
 }
 

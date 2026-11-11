@@ -126,6 +126,9 @@ model Order {
   reviewTokenHash String?      @unique
   expiresAt      DateTime?     @db.Timestamptz(3) // pending orders expire after 30 minutes
   paidAt         DateTime?     @db.Timestamptz(3)
+  // When the confirmation emails went out. Null after payment = retried by the payment check.
+  customerEmailedAt DateTime?  @db.Timestamptz(3)
+  ownerEmailedAt    DateTime?  @db.Timestamptz(3)
   packedAt       DateTime?     @db.Timestamptz(3)
   shippedAt      DateTime?     @db.Timestamptz(3)
   deliveredAt    DateTime?     @db.Timestamptz(3)

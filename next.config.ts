@@ -14,7 +14,29 @@ const s3Host =
   hostOf(process.env.S3_ENDPOINT) ??
   (process.env.S3_BUCKET ? `${process.env.S3_BUCKET}.s3.${process.env.S3_REGION || process.env.AWS_REGION || "ap-south-1"}.amazonaws.com` : undefined);
 
+// Where the browser may load things from. Anything else (an injected script, a
+// form posting to another site, the site being framed) is blocked by the browser.
+const mediaHost = s3Host ? `https://${s3Host}` : "";
+const csp = [
+  "default-src 'self'",
+  // Next.js needs inline scripts for page data; Razorpay and Instagram load their own.
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'"} https://checkout.razorpay.com https://www.instagram.com`,
+  "style-src 'self' 'unsafe-inline'",
+  `img-src 'self' data: blob: https://i.ytimg.com https://*.razorpay.com https://*.cdninstagram.com https://www.instagram.com ${mediaHost}`.trim(),
+  `media-src 'self' blob: ${mediaHost}`.trim(),
+  "font-src 'self' data:",
+  // Browser uploads go straight to the bucket; Razorpay's window talks to its API.
+  `connect-src 'self' https://*.razorpay.com ${mediaHost} ${hostOf(process.env.S3_ENDPOINT) ? `https://${hostOf(process.env.S3_ENDPOINT)}` : ""}`.replace(/\s+/g, " ").trim(),
+  "frame-src https://api.razorpay.com https://checkout.razorpay.com https://www.youtube-nocookie.com https://www.youtube.com https://www.instagram.com",
+  "frame-ancestors 'self'",
+  "form-action 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : []),
+].join("; ");
+
 const securityHeaders = [
+  { key: "Content-Security-Policy", value: csp },
   // HTTPS only, for two years.
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
   { key: "X-Content-Type-Options", value: "nosniff" },

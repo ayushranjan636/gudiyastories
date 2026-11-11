@@ -2,12 +2,13 @@ import Image from "next/image";
 import { ButtonLink } from "@/components/ui/button";
 import { Butterfly } from "@/components/motion/butterfly";
 import { HeroButterflyFlight } from "./hero-butterfly-flight";
+import { IntroSplash } from "./intro-splash";
 
 const WORD = "GUDIYA STORIES";
 
 // Runs during HTML parse, before first paint: decides whether this visit gets
-// the intro (once per session, never with reduced motion).
-const INTRO_SCRIPT = `try{var d=document.documentElement;if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!sessionStorage.getItem('gs-intro')){d.dataset.intro='run';sessionStorage.setItem('gs-intro','1')}else{d.dataset.intro='done'}}catch(e){}`;
+// the welcome scene and the intro (once per session, never with reduced motion).
+const INTRO_SCRIPT = `try{var d=document.documentElement;if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!sessionStorage.getItem('gs-intro')){d.dataset.intro='splash';sessionStorage.setItem('gs-intro','1')}else{d.dataset.intro='done'}}catch(e){}`;
 
 /** The logo's arch, rebuilt as live triple-line lettering on a circle. */
 function Arch() {
@@ -61,6 +62,7 @@ export function Hero() {
   return (
     <section className="relative overflow-x-clip" id="hero">
       <script dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
+      <IntroSplash />
       <div className="content-grid grid items-center gap-x-10 gap-y-6 pt-10 pb-16 md:pt-16 lg:grid-cols-12 lg:pb-24">
         <div className="relative z-10 lg:col-span-6">
           <p className="label-caps text-ink-soft">Picture books from Tirupati</p>

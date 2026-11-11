@@ -545,3 +545,290 @@ html.guide-on #hero-bfly-anchor > svg {
     transform: none;
   }
 }
+
+/* ---------- Welcome scene (components/home/intro-splash.tsx) ---------- */
+.intro-splash {
+  display: none;
+}
+html[data-intro="splash"] .intro-splash,
+.intro-splash.is-leaving {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  background: var(--paper);
+  /* Safety net: if scripts never run, the scene still gets out of the way. */
+  animation: is-fallback-out 500ms ease 6s forwards;
+}
+html[data-intro="splash"] .arch-letter,
+html[data-intro="splash"] .hero-doll,
+html[data-intro="splash"] #hero-bfly-anchor {
+  opacity: 0;
+}
+.intro-splash .is-sky {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 45% at 50% 0%, color-mix(in oklab, var(--lime) 10%, #ffffff) 0%, transparent 70%),
+    radial-gradient(90% 60% at 50% 100%, color-mix(in oklab, var(--lime) 14%, var(--paper)) 0%, transparent 70%);
+  animation: is-fade 600ms ease both;
+}
+.intro-splash .is-sun {
+  position: absolute;
+  top: clamp(1rem, 6vh, 4rem);
+  left: clamp(1rem, 7vw, 7rem);
+  width: clamp(4.5rem, 11vmin, 8rem);
+  animation: is-sun-rise 900ms var(--ease-page) both 150ms;
+}
+.intro-splash .is-rays {
+  transform-origin: 60px 60px;
+  animation: is-spin 14s linear infinite;
+}
+.intro-splash .is-cloud {
+  position: absolute;
+  height: auto;
+  filter: drop-shadow(0 6px 10px rgb(27 26 23 / 0.06));
+}
+.intro-splash .is-cloud-1 {
+  top: 4vh;
+  left: 22%;
+  width: clamp(9rem, 22vw, 18rem);
+  animation: is-cloud-in-l 1100ms var(--ease-page) both 100ms, is-drift 9s ease-in-out 1.2s infinite alternate;
+}
+.intro-splash .is-cloud-2 {
+  top: 9vh;
+  right: 6%;
+  width: clamp(8rem, 18vw, 15rem);
+  animation: is-cloud-in-r 1100ms var(--ease-page) both 200ms, is-drift 11s ease-in-out 1.3s infinite alternate-reverse;
+}
+.intro-splash .is-cloud-3 {
+  top: 24vh;
+  left: -2%;
+  width: clamp(6rem, 13vw, 11rem);
+  opacity: 0.9;
+  animation: is-cloud-in-l 1200ms var(--ease-page) both 300ms, is-drift 12s ease-in-out 1.5s infinite alternate;
+}
+.intro-splash .is-cloud-4 {
+  top: 2vh;
+  right: 34%;
+  width: clamp(5rem, 10vw, 9rem);
+  opacity: 0.85;
+  animation: is-cloud-in-r 1200ms var(--ease-page) both 350ms, is-drift 10s ease-in-out 1.4s infinite alternate-reverse;
+}
+.intro-splash .is-center {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  /* The logo; the rainbow (1.5x wider) arcs over it. */
+  width: min(60vw, 25rem, 36vh);
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 2;
+}
+.intro-splash .is-logo-wrap {
+  position: relative;
+  margin-top: 27%;
+}
+.intro-splash .is-rainbow {
+  position: absolute;
+  left: 50%;
+  bottom: 40%;
+  width: 150%;
+  transform: translateX(-50%);
+  overflow: visible;
+  z-index: -1;
+}
+.intro-splash .is-band {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: is-draw 1100ms var(--ease-page) forwards;
+  animation-delay: var(--d);
+  opacity: 0.9;
+}
+.intro-splash .is-welcome {
+  font-size: clamp(1.4rem, 4.2vmin, 2.4rem);
+  line-height: 1;
+  color: var(--ink);
+  margin-bottom: 0.4em;
+}
+.intro-splash .is-welcome span {
+  display: inline-block;
+  animation: is-letter 520ms var(--ease-page) both;
+  animation-delay: calc(700ms + var(--i) * 45ms);
+}
+.intro-splash .is-logo {
+  animation: is-logo-in 900ms cubic-bezier(0.34, 1.4, 0.5, 1) both 950ms;
+}
+.intro-splash .is-hills {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: clamp(9rem, 30vh, 20rem);
+}
+.intro-splash .is-hill-back {
+  animation: is-rise 900ms var(--ease-page) both 150ms;
+}
+.intro-splash .is-hill-mid {
+  animation: is-rise 900ms var(--ease-page) both 280ms;
+}
+.intro-splash .is-hill-front {
+  animation: is-rise 900ms var(--ease-page) both 400ms;
+}
+.intro-splash .is-flowers span {
+  position: absolute;
+  bottom: clamp(1.2rem, 4.5vh, 3rem);
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px color-mix(in oklab, #ffffff 55%, transparent);
+  animation: is-pop 420ms cubic-bezier(0.34, 1.6, 0.5, 1) both;
+  animation-delay: calc(900ms + var(--i) * 70ms);
+}
+.intro-splash .is-tree {
+  position: absolute;
+  height: auto;
+  transform-origin: 50% 100%;
+  animation: is-grow 800ms cubic-bezier(0.34, 1.5, 0.5, 1) both;
+}
+.intro-splash .is-tree-1 {
+  left: 3%;
+  bottom: clamp(3rem, 12vh, 7rem);
+  width: clamp(4.5rem, 11vw, 9rem);
+  animation-delay: 550ms;
+}
+.intro-splash .is-tree-2 {
+  left: 12%;
+  bottom: clamp(2.2rem, 9vh, 5rem);
+  width: clamp(3.5rem, 8vw, 6.5rem);
+  animation-delay: 700ms;
+}
+.intro-splash .is-tree-3 {
+  right: 4%;
+  bottom: clamp(2.6rem, 11vh, 6.5rem);
+  width: clamp(4.5rem, 10vw, 8.5rem);
+  animation-delay: 620ms;
+}
+.intro-splash .is-tree-4 {
+  right: 14%;
+  bottom: clamp(2rem, 8vh, 4.6rem);
+  width: clamp(3rem, 6.5vw, 5.5rem);
+  animation-delay: 780ms;
+}
+.intro-splash .is-bfly {
+  position: absolute;
+  width: clamp(1.8rem, 3.6vmin, 2.6rem);
+  z-index: 3;
+}
+.intro-splash .is-bfly-1 {
+  left: -6%;
+  top: 62%;
+  animation: is-fly-1 3.4s ease-in-out both 600ms;
+}
+.intro-splash .is-bfly-2 {
+  right: -6%;
+  top: 30%;
+  animation: is-fly-2 3.6s ease-in-out both 900ms;
+}
+.intro-splash .is-progress {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1rem, 3vh, 1.75rem);
+  width: min(40vw, 12rem);
+  height: 3px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: color-mix(in oklab, #ffffff 55%, transparent);
+  overflow: hidden;
+  z-index: 3;
+}
+.intro-splash .is-progress span {
+  display: block;
+  height: 100%;
+  background: var(--paper);
+  transform-origin: 0 50%;
+  animation: is-load 2.6s cubic-bezier(0.3, 0.6, 0.4, 1) both;
+}
+.intro-splash .is-skip {
+  position: absolute;
+  right: clamp(0.75rem, 2.5vw, 1.5rem);
+  top: clamp(0.75rem, 2.5vh, 1.5rem);
+  z-index: 4;
+  min-height: 40px;
+  padding: 0 1rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink);
+  background: color-mix(in oklab, #ffffff 70%, transparent);
+  border: 1px solid var(--line);
+  animation: is-fade 400ms ease both 900ms;
+}
+
+/* Leaving: the sky lifts, the hills sink, the logo grows and fades into the page. */
+.intro-splash.is-leaving {
+  animation: is-out 750ms var(--ease-page) forwards;
+  pointer-events: none;
+}
+.intro-splash.is-leaving .is-cloud,
+.intro-splash.is-leaving .is-sun {
+  transition: transform 700ms var(--ease-page);
+  transform: translateY(-40vh);
+}
+.intro-splash.is-leaving .is-hills,
+.intro-splash.is-leaving .is-tree,
+.intro-splash.is-leaving .is-flowers {
+  transition: transform 700ms var(--ease-page);
+  transform: translateY(45vh);
+}
+.intro-splash.is-leaving .is-center {
+  transition: transform 700ms var(--ease-page), opacity 600ms ease;
+  transform: translate(-50%, -50%) scale(1.08);
+  opacity: 0;
+}
+
+@keyframes is-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes is-spin { to { transform: rotate(360deg); } }
+@keyframes is-sun-rise { from { opacity: 0; transform: translateY(40px) scale(0.6); } to { opacity: 1; transform: none; } }
+@keyframes is-cloud-in-l { from { opacity: 0; transform: translateX(-30vw); } to { opacity: 1; transform: none; } }
+@keyframes is-cloud-in-r { from { opacity: 0; transform: translateX(30vw); } to { opacity: 1; transform: none; } }
+@keyframes is-drift { from { translate: 0 0; } to { translate: 3vw 0.5vh; } }
+@keyframes is-draw { to { stroke-dashoffset: 0; } }
+@keyframes is-letter { from { opacity: 0; transform: translateY(0.4em) rotate(-6deg); } to { opacity: 1; transform: none; } }
+@keyframes is-logo-in { from { opacity: 0; transform: scale(0.7) rotate(-4deg); } to { opacity: 1; transform: none; } }
+@keyframes is-rise { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes is-pop { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: none; } }
+@keyframes is-grow { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: none; } }
+@keyframes is-load { from { transform: scaleX(0); } to { transform: scaleX(0.92); } }
+@keyframes is-out { to { opacity: 0; visibility: hidden; } }
+@keyframes is-fallback-out { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+@keyframes is-fly-1 {
+  0% { transform: translate(0, 0) rotate(10deg); opacity: 0; }
+  10% { opacity: 1; }
+  35% { transform: translate(30vw, -14vh) rotate(-12deg); }
+  65% { transform: translate(62vw, -4vh) rotate(14deg); }
+  100% { transform: translate(110vw, -26vh) rotate(-8deg); opacity: 1; }
+}
+@keyframes is-fly-2 {
+  0% { transform: translate(0, 0) scaleX(-1); opacity: 0; }
+  10% { opacity: 1; }
+  40% { transform: translate(-34vw, 10vh) scaleX(-1) rotate(10deg); }
+  70% { transform: translate(-60vw, -2vh) scaleX(-1) rotate(-12deg); }
+  100% { transform: translate(-112vw, 8vh) scaleX(-1); opacity: 1; }
+}
+
+/* Shimmer over a video poster while the clip loads (components/ui/lazy-video.tsx). */
+.lazy-shimmer {
+  background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.28) 50%, transparent 70%);
+  background-size: 250% 100%;
+  animation: lazy-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes lazy-shimmer {
+  from { background-position: 120% 0; }
+  to { background-position: -120% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lazy-shimmer { animation: none; }
+}

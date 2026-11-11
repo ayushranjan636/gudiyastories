@@ -149,5 +149,5 @@ export async function removeRazorpayKeys() {
   await audit(admin, "DELETE", "Setting", SETTING_KEY, { keyId: (before.value as { keyId?: string }).keyId }, undefined);
   forgetCachedCredentials();
   revalidatePath("/", "layout");
-  return { ok: true, message: "Keys removed. Checkout now offers cash on delivery and WhatsApp only." };
+  return { ok: true, message: "Keys removed. Checkout is closed until keys are added again." };
 }

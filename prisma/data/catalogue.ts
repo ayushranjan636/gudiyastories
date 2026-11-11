@@ -225,6 +225,7 @@ export const BOOKS: SeedBook[] = [
       alt: "Cover of Focus: Nature Mandala Colouring Book: line drawings of a koala with its baby and two ostriches below a blue heart.",
     },
     inside: [
+      { src: "/books/inside/focus-nature-mandala-colouring-book-1.webp", width: 800, height: 1011, alt: "Inside Focus: Nature Mandala Colouring Book: a mother koala hugging her baby, drawn in mandala patterns, ready to colour" },
       { src: "/books/inside/focus-nature-mandala-colouring-book-back.webp", width: 800, height: 1011, alt: "Back cover of Focus: Nature Mandala Colouring Book" },
     ],
     spineColor: "#8DB6E6",

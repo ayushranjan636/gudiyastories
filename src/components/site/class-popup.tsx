@@ -66,14 +66,14 @@ export function ClassPopup({ c }: { c: PopupClass }) {
     };
     // Wait for the hero animation to finish first.
     const root = document.documentElement;
-    if (root.dataset.intro !== "run") show();
+    if (!["run", "splash"].includes(root.dataset.intro ?? "")) show();
     const mo = new MutationObserver(() => {
-      if (root.dataset.intro !== "run") {
+      if (!["run", "splash"].includes(root.dataset.intro ?? "")) {
         mo.disconnect();
         show();
       }
     });
-    if (root.dataset.intro === "run") mo.observe(root, { attributes: true, attributeFilter: ["data-intro"] });
+    if (["run", "splash"].includes(root.dataset.intro ?? "")) mo.observe(root, { attributes: true, attributeFilter: ["data-intro"] });
     return () => {
       window.clearTimeout(timer);
       mo.disconnect();

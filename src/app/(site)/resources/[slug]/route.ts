@@ -10,7 +10,12 @@ export async function GET(req: Request, ctx: { params: Promise<{ slug: string }>
   if (!r || !r.published || r.isPlaceholder) return new Response("Not found", { status: 404 });
 
   const ua = req.headers.get("user-agent") ?? "";
-  const ip = req.headers.get("x-nf-client-connection-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
+  const { clientIp, rateLimit } = await import("@/server/rate-limit");
+  const ip = clientIp(req.headers);
+  // Downloads are counted; don't let a script inflate the numbers.
+  if (!(await rateLimit(`download:${createHash("sha256").update(ip).digest("hex").slice(0, 24)}`, 60, 3600))) {
+    return Response.redirect(new URL(r.fileUrl, req.url), 302);
+  }
   const day = new Date().toISOString().slice(0, 10);
   const sessionId = createHash("sha256").update(`${process.env.ANALYTICS_SALT_SECRET ?? "gudiya"}:${day}:${ip}:${ua}`).digest("hex").slice(0, 32);
   await db.resourceDownload.create({ data: { resourceId: r.id, sessionId } }).catch(() => {});

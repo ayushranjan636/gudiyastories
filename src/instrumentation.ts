@@ -43,6 +43,8 @@ function checkProductionConfig() {
   if (!e.NEXT_PUBLIC_SITE_URL?.startsWith("https://")) problems.push("NEXT_PUBLIC_SITE_URL should be your https:// address (set it before `npm run build`).");
   if (!e.CRON_SECRET || e.CRON_SECRET.length < 16) problems.push("CRON_SECRET is missing or short: the daily job can't run.");
   if (!e.ANALYTICS_SALT_SECRET) problems.push("ANALYTICS_SALT_SECRET is not set.");
+  if (!e.RESEND_API_KEY || !e.EMAIL_FROM) problems.push("RESEND_API_KEY / EMAIL_FROM not set: no order confirmation emails will be sent to customers or to you.");
+  if (!e.OWNER_NOTIFICATION_EMAIL) problems.push("OWNER_NOTIFICATION_EMAIL not set: new-order emails go to the shop's public address.");
   if (e.SEED_DEMO_STOCK === "true") problems.push('SEED_DEMO_STOCK="true" adds fake stock if the seed runs. Set it to "false".');
   if (serverless() && (e.STORAGE_DRIVER || "local") !== "s3") problems.push('STORAGE_DRIVER must be "s3" (Cloudflare R2) here: this host has no lasting disk, so uploads would vanish.');
   if (e.RAZORPAY_KEY_ID?.startsWith("rzp_test_")) problems.push("RAZORPAY_KEY_ID is a test key; the live site ignores it. Use live keys (rzp_live_…).");

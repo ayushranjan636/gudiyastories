@@ -6,7 +6,7 @@
 | Database | **Supabase**, region **Mumbai (ap-south-1)** | Books, orders, customers, settings |
 | Uploads | **Cloudflare R2** | Covers, blog pictures, PDFs and videos uploaded in Admin |
 | Payments | **Razorpay** | Your live keys, pasted in Admin |
-| Email (optional) | **Resend** | Receipts and order emails (3,000/month free) |
+| Email | **Resend** | Order confirmation to the customer, "new order" to you (3,000/month free) |
 
 Free plans change. Check each one's current limits before launch. Netlify's free plan uses monthly credits, and each production deploy uses some, so deploy in batches rather than after every small edit.
 
@@ -80,7 +80,9 @@ You don't create any tables yourself. The first Netlify build creates them and a
 | `S3_PUBLIC_URL` | `https://media.gudiyastories.com` or your `https://pub-xxxx.r2.dev` |
 | `AWS_ACCESS_KEY_ID` | R2 Access Key ID |
 | `AWS_SECRET_ACCESS_KEY` | R2 Secret Access Key |
-| `RESEND_API_KEY`, `EMAIL_FROM`, `OWNER_NOTIFICATION_EMAIL` | optional, for emails |
+| `RESEND_API_KEY` | **required**: [resend.com](https://resend.com) → API Keys (free: 3,000 emails/month) |
+| `EMAIL_FROM` | **required**: e.g. `Gudiya Stories <orders@gudiyastories.com>` (verify the domain in Resend first) |
+| `OWNER_NOTIFICATION_EMAIL` | **required**: where "New order" emails go, e.g. the owner's Gmail |
 
    `NEXT_PUBLIC_SITE_URL` and `S3_PUBLIC_URL` are built into the site, so after changing either one, trigger a new deploy (**Deploys → Trigger deploy**).
 3. **Deploy**. The build log shows `Database created and filled. Owner login: …` the first time.

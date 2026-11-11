@@ -18,6 +18,7 @@ import { formatDate } from "@/lib/format";
 import { SiteShell } from "@/components/site/site-shell";
 import { RecognitionPhotos } from "@/components/site/recognition-photos";
 import { FramedArt } from "@/components/home/reader-wall";
+import { ColouredByReaders, ReadersReel } from "@/components/home/readers-reel";
 import { whatsappLink } from "@/config/site";
 import { getClasses, getPopupClass } from "@/features/classes/repo";
 import { ClassCard } from "@/components/site/class-card";
@@ -82,6 +83,9 @@ export default async function HomePage() {
           <Bookshelf books={shelf} />
         </div>
       </section>
+
+      {/* The books in real hands */}
+      <ReadersReel books={products.filter((p) => p.type !== "BUNDLE").map((p) => ({ slug: p.slug, title: p.title }))} />
 
       {/* Values */}
       <section aria-labelledby="values-title" className="content-grid py-16 md:py-24">
@@ -231,7 +235,7 @@ export default async function HomePage() {
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:radial-gradient(rgb(27_26_23/0.07)_1px,transparent_1px)] [background-size:18px_18px]"
         />
-        <div className="content-grid relative grid items-center gap-16 py-24 md:py-32 lg:grid-cols-12">
+        <div className="content-grid relative grid items-center gap-16 pt-24 pb-16 md:pt-32 md:pb-20 lg:grid-cols-12">
           <FramedArt className="lg:col-span-6 lg:col-start-1" />
           <Reveal className="lg:col-span-5 lg:col-start-8">
             <p className="label-caps text-ink-soft">On the reader&apos;s wall</p>
@@ -257,6 +261,7 @@ export default async function HomePage() {
             </div>
           </Reveal>
         </div>
+        <ColouredByReaders />
       </section>
 
       {/* Donimalai */}
@@ -398,7 +403,7 @@ export default async function HomePage() {
             { icon: Truck, title: "Ships across India", text: "Sent from Tirupati." },
             { icon: BookCheck, title: "ISBN on every title", text: "Registered, listed and traceable." },
             { icon: Printer, title: "Printed in India", text: "300gsm art paper with a matte finish." },
-            { icon: Wallet, title: "Pay how you like", text: "UPI, card, or order on WhatsApp." },
+            { icon: Wallet, title: "Pay securely", text: "UPI, card, netbanking or wallet." },
           ].map(({ icon: Icon, title, text }) => (
             <li key={title} className="flex gap-4 bg-paper p-6">
               <Icon className="mt-0.5 size-5 shrink-0 text-leaf" strokeWidth={1.5} aria-hidden="true" />

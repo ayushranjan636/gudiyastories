@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { InUseStrip } from "@/components/book/in-use";
+import { inUseForSet } from "@/content/gallery";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCatalogue, getProduct } from "@/features/catalogue/repo";
@@ -109,6 +111,10 @@ export default async function SetPage({ params }: Params) {
           ))}
         </ol>
       </section>
+
+      {inUseForSet(parts.map((p) => p.slug)).length ? (
+        <InUseStrip items={inUseForSet(parts.map((p) => p.slug))} title={set.title} heading="In readers' hands" />
+      ) : null}
 
       <MobileBuyBar slug={set.slug} title={set.title} pricePaise={set.pricePaise} available={set.available} coverId={coverId} />
       <JsonLd

@@ -6,7 +6,7 @@ import { getRazorpayCredentials, keyKind, type RazorpayCredentials } from "./cre
  * The only file that talks to the payment provider (Razorpay).
  *
  *  - "razorpay": Razorpay keys are set (in .env or Admin → Settings). Real payments.
- *  - "none":     no keys; checkout offers cash on delivery / WhatsApp only.
+ *  - "none":     no keys; checkout is closed (online payment is the only way to order).
  *
  * Every payment is confirmed only after the server fetches it from Razorpay's
  * API and checks the order, amount, currency and status.

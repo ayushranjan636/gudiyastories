@@ -9,7 +9,17 @@ import type { Prisma } from "@/generated/prisma/client";
 
 export const metadata = { title: "Orders" };
 
-const TABS = ["all", "PENDING_PAYMENT", "PAID", "PACKED", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"] as const;
+// "All orders" = real orders only. Website checkouts that were never paid are not
+// orders: they live under "Unpaid attempts" and never reach the packing list.
+const TABS = ["all", "PAID", "PACKED", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED", "unpaid"] as const;
+const UNPAID = ["PENDING_PAYMENT", "EXPIRED"] as const;
+const TAB_LABEL: Record<string, string> = { all: "All orders", unpaid: "Unpaid attempts" };
+
+function statusWhere(tab: string): Prisma.OrderWhereInput {
+  if (tab === "unpaid") return { status: { in: [...UNPAID] } };
+  if (tab === "all") return { status: { notIn: [...UNPAID] } };
+  return { status: tab as Prisma.OrderWhereInput["status"] };
+}
 
 export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ status?: string; q?: string; channel?: string }> }) {
   await requireAdmin();
@@ -21,7 +31,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
   await db.order.updateMany({ where: { status: "PENDING_PAYMENT", expiresAt: { lt: new Date() } }, data: { status: "EXPIRED" } });
 
   const where: Prisma.OrderWhereInput = {
-    ...(status !== "all" ? { status: status as Prisma.OrderWhereInput["status"] } : {}),
+    ...statusWhere(status),
     ...(sp.channel ? { channel: sp.channel as Prisma.OrderWhereInput["channel"] } : {}),
     ...(q
       ? {
@@ -37,7 +47,9 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
     db.order.findMany({ where, orderBy: { createdAt: "desc" }, take: 100, include: { _count: { select: { items: true } } } }),
     db.order.groupBy({ by: ["status"], _count: { _all: true } }),
   ]);
-  const count = (s: string) => (s === "all" ? counts.reduce((n, c) => n + c._count._all, 0) : (counts.find((c) => c.status === s)?._count._all ?? 0));
+  const isUnpaid = (st: string) => (UNPAID as readonly string[]).includes(st);
+  const sum = (pred: (st: string) => boolean) => counts.filter((c) => pred(c.status)).reduce((n, c) => n + c._count._all, 0);
+  const count = (t: string) => (t === "all" ? sum((st) => !isUnpaid(st)) : t === "unpaid" ? sum(isUnpaid) : sum((st) => st === t));
 
   return (
     <div className="space-y-6">
@@ -57,7 +69,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
       />
       <Tabs
         active={`/admin/orders?status=${status}`}
-        items={TABS.map((t) => ({ href: `/admin/orders?status=${t}`, label: t === "all" ? "All" : (STATUS_LABEL[t] ?? t), count: count(t) }))}
+        items={TABS.map((t) => ({ href: `/admin/orders?status=${t}`, label: TAB_LABEL[t] ?? STATUS_LABEL[t] ?? t, count: count(t) }))}
       />
       <form className="flex max-w-md gap-2">
         <input type="hidden" name="status" value={status} />
@@ -104,7 +116,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
           </tbody>
         </Table>
       ) : (
-        <Empty>No orders here yet.</Empty>
+        <Empty>{status === "unpaid" ? "No unpaid checkout attempts." : "No orders here yet. Website orders appear here only after the payment goes through."}</Empty>
       )}
     </div>
   );

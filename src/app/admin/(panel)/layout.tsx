@@ -3,6 +3,7 @@ import { requireAdmin } from "@/server/admin";
 import { db } from "@/server/db";
 import { AdminNav } from "./admin-nav";
 import { credentialsStatus } from "@/features/payments/credentials";
+import { hasEmail } from "@/server/email";
 
 export const metadata: Metadata = { title: { default: "Admin", template: "%s · Admin" }, robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -24,10 +25,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         : status.rejectedStored
           ? "The saved Razorpay keys are test keys, which the live site doesn't accept. Enter live keys in Settings → Online payments."
           : !status.configured
-            ? "Online payment is off: checkout offers cash on delivery and WhatsApp only. Add your Razorpay keys in Settings → Online payments."
+            ? "Checkout is closed: customers can't order until you add your Razorpay keys in Settings → Online payments."
             : status.kind === "test"
               ? "Payments: Razorpay test keys (this computer only). Nothing is charged. The live site needs live keys (rzp_live_…)."
-              : null;
+              : !hasEmail()
+                ? "Order emails are off: customers get no confirmation and you get no new-order email. Set RESEND_API_KEY, EMAIL_FROM and OWNER_NOTIFICATION_EMAIL (docs/DEPLOY-NETLIFY.md)."
+                : null;
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[15rem_1fr]">
       <AdminNav admin={{ name: admin.name, role: admin.role }} counts={{ toPack, newEnquiries, pendingReviews }} />

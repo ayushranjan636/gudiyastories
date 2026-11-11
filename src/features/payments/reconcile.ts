@@ -102,6 +102,9 @@ export async function reconcilePending(opts: { maxAgeHours?: number; budgetMs?: 
       where: { status: "PENDING_PAYMENT", expiresAt: { lt: new Date() } },
       data: { status: "EXPIRED" },
     });
+    // Confirmation emails that failed the first time (email service hiccup) go out now.
+    const { retryOrderEmails } = await import("@/features/orders/service");
+    await retryOrderEmails().catch((err) => console.error("[email] retry sweep", err));
     return { checked, paid, expired: expired.count, skipped: false };
   } finally {
     running = false;

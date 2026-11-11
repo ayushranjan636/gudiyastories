@@ -19,7 +19,13 @@ export async function GET(req: Request, ctx: { params: Promise<{ report: string 
   if (report === "orders") {
     const status = url.searchParams.get("status");
     const orders = await db.order.findMany({
-      where: status && status !== "all" ? { status: status as never } : {},
+      // Same rules as the order list: unpaid checkout attempts are not orders.
+      where:
+        status === "unpaid"
+          ? { status: { in: ["PENDING_PAYMENT", "EXPIRED"] } }
+          : status && ["PAID", "PACKED", "SHIPPED", "DELIVERED", "CANCELLED", "RETURNED", "REFUNDED"].includes(status)
+            ? { status: status as "PAID" }
+            : { status: { notIn: ["PENDING_PAYMENT", "EXPIRED"] } },
       orderBy: { createdAt: "desc" },
       include: { items: true },
       take: 5000,
@@ -51,7 +57,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ report: string 
 
   if (report === "customers") {
     if (role !== "OWNER" && admin.role !== "OWNER") return new Response("Owner only", { status: 403 });
-    const customers = await db.customer.findMany({ include: { orders: { select: { totalPaise: true, status: true } } }, take: 10000 });
+    const customers = await db.customer.findMany({
+      where: { orders: { some: { status: { notIn: ["PENDING_PAYMENT", "EXPIRED"] } } } },
+      include: { orders: { where: { status: { notIn: ["PENDING_PAYMENT", "EXPIRED"] } }, select: { totalPaise: true, status: true } } },
+      take: 10000,
+    });
     return csvResponse(
       "customers",
       customers.map((c) => ({

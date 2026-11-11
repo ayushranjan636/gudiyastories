@@ -12,7 +12,11 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const admin = await requireAdmin();
   const q = (await searchParams).q?.trim().slice(0, 80);
   const customers = await db.customer.findMany({
-    where: q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { phone: { contains: q } }, { email: { contains: q, mode: "insensitive" } }] } : {},
+    // Only people with at least one real (paid) order. Abandoned checkouts aren't customers.
+    where: {
+      orders: { some: { status: { in: [...PAID_STATUSES, "CANCELLED", "RETURNED", "REFUNDED"] } } },
+      ...(q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { phone: { contains: q } }, { email: { contains: q, mode: "insensitive" } }] } : {}),
+    },
     orderBy: { createdAt: "desc" },
     take: 200,
     include: { orders: { where: { status: { in: [...PAID_STATUSES] } }, select: { totalPaise: true, createdAt: true } } },

@@ -18,7 +18,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
       credentials: { email: {}, password: {} },
-      async authorize(raw) {
+      async authorize(raw, request) {
+        // Per-IP limit here too: this endpoint can be called directly, bypassing the login form.
+        const { clientIp, rateLimit } = await import("@/server/rate-limit");
+        const { createHash } = await import("node:crypto");
+        const ip = clientIp(request.headers);
+        if (!(await rateLimit(`auth:${createHash("sha256").update(ip).digest("hex").slice(0, 24)}`, 10, 900))) return null;
         const parsed = z.object({ email: z.string().email(), password: z.string().min(1).max(200) }).safeParse(raw);
         if (!parsed.success) return null;
         const { db } = await import("@/server/db");

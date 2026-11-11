@@ -26,7 +26,9 @@ export function BuyBox({ slug, sku, title, pricePaise, mrpPaise, available, cove
   const soldOut = available === 0;
   const max = available == null ? 20 : Math.max(1, Math.min(20, available));
   const savings = mrpPaise - pricePaise;
-  const message = `Hello Gudiya Stories, I would like to order ${Math.max(1, qty)} × ${title} (${sku}) at ${formatINR(pricePaise)} each.`;
+  // Orders are placed only through checkout with online payment. When a book is
+  // sold out, customers can still ask on WhatsApp when it will be back.
+  const message = `Hello Gudiya Stories, when will ${title} (${sku}) be back in stock?`;
 
   useEffect(() => {
     track("product_view", { productSlug: slug, valuePaise: pricePaise });
@@ -64,6 +66,7 @@ export function BuyBox({ slug, sku, title, pricePaise, mrpPaise, available, cove
           </button>
         ) : null}
       </div>
+      {soldOut ? (
       <a
         href={whatsappLink(message)}
         target="_blank"
@@ -72,8 +75,9 @@ export function BuyBox({ slug, sku, title, pricePaise, mrpPaise, available, cove
         className="mt-4 inline-flex items-center gap-2 text-small font-medium text-leaf underline decoration-lime decoration-2 underline-offset-4"
       >
         <MessageCircle className="size-4" strokeWidth={1.5} aria-hidden="true" />
-        {soldOut ? "Ask on WhatsApp when it is back" : "Or order on WhatsApp"}
+        Ask on WhatsApp when it is back
       </a>
+      ) : null}
     </div>
   );
 }

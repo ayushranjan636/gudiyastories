@@ -23,7 +23,7 @@ That one command starts a local database (Prisma's built-in Postgres, nothing el
 | Admin | http://localhost:3000/admin |
 | Admin email | `admin@gudiyastories.local` |
 | Admin password | `GudiyaAdmin@2026` |
-| Payments | off (COD / WhatsApp) until Razorpay keys are added in Admin → Settings → Online payments |
+| Payments | off (no orders can be placed) until Razorpay keys are added in Admin → Settings → Online payments |
 
 These are local-only details. Change the password in Admin → Settings → Your password, and use your own `ADMIN_EMAIL` / `ADMIN_PASSWORD` for the live site.
 

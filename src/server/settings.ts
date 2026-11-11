@@ -25,7 +25,8 @@ export async function getShippingRules(): Promise<ShippingRules> {
   return {
     flatRatePaise: s.flatRatePaise ?? SITE.flatShippingPaise,
     freeFromPaise: s.freeShippingThresholdPaise ?? SITE.freeShippingFromPaise,
-    codEnabled: Boolean(s.codEnabled) && hasDatabase(),
+    // The website takes online payment only; cash on delivery is never offered.
+    codEnabled: false,
     codFeePaise: s.codFeePaise ?? 0,
   };
 }

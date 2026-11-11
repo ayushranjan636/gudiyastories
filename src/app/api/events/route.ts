@@ -48,7 +48,11 @@ export async function POST(req: Request) {
     return new Response(null, { status: 400 });
   }
 
-  const ip = req.headers.get("x-nf-client-connection-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "0.0.0.0";
+  const { clientIp } = await import("@/server/rate-limit");
+  const ip = clientIp(req.headers);
+  // Plenty for a real visitor; stops scripts from flooding the analytics table.
+  const { rateLimit } = await import("@/server/rate-limit");
+  if (!(await rateLimit(`events:${createHash("sha256").update(ip).digest("hex").slice(0, 24)}`, 300, 600))) return new Response(null, { status: 429 });
   const day = new Date().toISOString().slice(0, 10);
   const salt = createHash("sha256").update(`${process.env.ANALYTICS_SALT_SECRET ?? "gudiya"}:${day}`).digest("hex");
   const sessionId = createHash("sha256").update(`${salt}:${ip}:${ua}`).digest("hex").slice(0, 32);

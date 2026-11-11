@@ -51,7 +51,7 @@ export function ButterflyGuide() {
   useEffect(() => {
     if (reduce) return;
     const root = document.documentElement;
-    const ready = () => root.dataset.intro !== "run";
+    const ready = () => !["run", "splash"].includes(root.dataset.intro ?? "");
     if (ready()) {
       const raf = requestAnimationFrame(() => setVisible(true));
       return () => cancelAnimationFrame(raf);

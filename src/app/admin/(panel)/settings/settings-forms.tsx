@@ -61,7 +61,7 @@ function PaymentsCard({ status }: { status: PaymentsStatus }) {
           ) : (
             <>
               <span className="mr-2 inline-block rounded-full bg-clay/10 px-2.5 py-0.5 text-[0.75rem] font-medium text-clay">Off</span>
-              Checkout offers cash on delivery and WhatsApp only until you add your keys.
+              Customers can&apos;t place orders until you add your keys.
             </>
           )}
         </p>
@@ -110,7 +110,7 @@ function PaymentsCard({ status }: { status: PaymentsStatus }) {
                   className={btn.quiet}
                   disabled={pending}
                   onClick={() => {
-                    if (confirm("Turn off online payment? Checkout will offer cash on delivery and WhatsApp only.")) start(async () => setMsg(await removeRazorpayKeys()));
+                    if (confirm("Turn off online payment? Customers will not be able to place orders until keys are added again.")) start(async () => setMsg(await removeRazorpayKeys()));
                   }}
                 >
                   Remove keys
@@ -156,21 +156,20 @@ export function SettingsForms({
       <PaymentsCard status={payments} />
 
       <Section
-        title="Delivery and payment"
+        title="Delivery charges"
         onSave={(f) =>
           saveSetting("shipping", {
             flatRateRupees: f.get("flat"),
             freeShippingThresholdRupees: get(f, "free"),
-            codEnabled: f.get("cod") === "on",
-            codFeeRupees: f.get("codFee") || 0,
+            // The website takes online payment only.
+            codEnabled: false,
+            codFeeRupees: 0,
           })
         }
       >
         <div className="grid grid-cols-2 gap-3">
           <label className={labelCls}>Delivery charge ₹<input name="flat" type="number" min={0} defaultValue={paiseToRupees(shipping.flatRatePaise) || "60"} className={inputCls} /></label>
           <label className={labelCls}>Free delivery from ₹<input name="free" type="number" min={0} defaultValue={paiseToRupees(shipping.freeShippingThresholdPaise) || "499"} className={inputCls} /></label>
-          <label className={labelCls}>COD fee ₹<input name="codFee" type="number" min={0} defaultValue={paiseToRupees(shipping.codFeePaise) || "0"} className={inputCls} /></label>
-          <label className="flex items-end gap-2 pb-2 text-small"><input type="checkbox" name="cod" defaultChecked={Boolean(shipping.codEnabled)} className="size-4 accent-leaf" /> Offer cash on delivery</label>
         </div>
       </Section>
 

@@ -36,3 +36,6 @@ npm-debug.log*
 
 # Netlify local state
 /.netlify/
+
+# raw client source assets (not used by the site)
+/public/Deepesh sir/

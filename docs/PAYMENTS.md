@@ -2,7 +2,7 @@
 
 Checkout has the whole payment flow built in. All you add is your Razorpay keys. There is **no test or pretend gateway**:
 
-- **No keys:** checkout offers cash on delivery and WhatsApp only.
+- **No keys:** checkout is closed; no orders can be placed.
 - **Keys added:** checkout takes real payments through Razorpay straight away.
 
 ## Adding your keys (the normal way)

@@ -9,7 +9,7 @@ import { orderToken } from "@/features/orders/token";
 import { getShippingRules } from "@/server/settings";
 import { clientKey, rateLimit } from "@/server/rate-limit";
 import { computeTotals, type CouponRule, type PricedLine, type Totals } from "./pricing";
-import { SITE, whatsappLink } from "@/config/site";
+import { SITE } from "@/config/site";
 import { formatINR } from "@/lib/money";
 
 const lineSchema = z.object({ slug: z.string().max(120), quantity: z.number().int().min(1).max(20) });
@@ -86,20 +86,20 @@ async function findCoupon(code: string | undefined, customerPhone?: string): Pro
 export type Quote = Totals & {
   problems: string[];
   canPayOnline: boolean;
-  codAvailable: boolean;
   lines: { slug: string; title: string; quantity: number; lineTotalPaise: number }[];
 };
 
-export async function quoteCheckout(input: { lines: { slug: string; quantity: number }[]; coupon?: string; cod?: boolean }): Promise<Quote> {
+export async function quoteCheckout(input: { lines: { slug: string; quantity: number }[]; coupon?: string }): Promise<Quote> {
   const lines = z.array(lineSchema).max(30).parse(input.lines);
+  // Cheap, but still capped so nobody can hammer pricing and coupon lookups.
+  if (!(await rateLimit(await clientKey("quote"), 300, 600))) throw new Error("Too many requests. Please wait a few minutes.");
   const [{ priced, problems }, rules, coupon, mode] = await Promise.all([priceLines(lines), getShippingRules(), findCoupon(input.coupon), paymentMode()]);
-  const totals = computeTotals(priced, rules, coupon.rule, Boolean(input.cod));
+  const totals = computeTotals(priced, rules, coupon.rule, false);
   return {
     ...totals,
     couponError: coupon.error ?? totals.couponError,
     problems,
     canPayOnline: hasDatabase() && mode === "razorpay",
-    codAvailable: rules.codEnabled,
     lines: priced.map((l) => ({ slug: l.slug, title: l.title, quantity: l.quantity, lineTotalPaise: l.unitPricePaise * l.quantity })),
   };
 }
@@ -115,7 +115,8 @@ const checkoutSchema = z.object({
   lines: z.array(lineSchema).min(1, "Your bag is empty").max(30),
   name: z.string().trim().min(2, "Enter your name").max(120),
   phone,
-  email: z.union([z.literal(""), z.string().trim().email("Enter a valid email")]).optional(),
+  // Required: the order confirmation and receipt are sent here.
+  email: z.string().trim().toLowerCase().min(1, "Enter your email for the order confirmation").max(200).email("Enter a valid email"),
   line1: z.string().trim().min(3, "Enter the house and street").max(200),
   line2: z.string().trim().max(200).optional(),
   landmark: z.string().trim().max(120).optional(),
@@ -124,8 +125,11 @@ const checkoutSchema = z.object({
   pinCode: z.string().trim().regex(/^[1-9]\d{5}$/, "Enter a 6-digit PIN code"),
   note: z.string().trim().max(500).optional(),
   coupon: z.string().trim().max(40).optional(),
-  method: z.enum(["RAZORPAY", "COD", "WHATSAPP"]),
+  // Online payment is the only way to order on the website.
+  method: z.literal("RAZORPAY"),
   marketing: z.boolean().default(false),
+  /** Hidden field that people never see. Bots that fill in every box fill this too. */
+  website: z.string().max(200).optional(),
   /** The total the customer saw. If the server's total differs, nothing is charged. */
   expectedTotalPaise: z.number().int().nonnegative(),
 });
@@ -133,8 +137,6 @@ const checkoutSchema = z.object({
 export type CheckoutInput = z.input<typeof checkoutSchema>;
 export type PlaceResult =
   | { ok: false; error: string; fieldErrors?: Record<string, string>; priceChanged?: boolean }
-  | { ok: true; kind: "whatsapp"; url: string }
-  | { ok: true; kind: "cod"; orderNumber: string; token: string }
   | {
       ok: true;
       kind: "razorpay";
@@ -156,14 +158,23 @@ export async function placeOrder(input: CheckoutInput): Promise<PlaceResult> {
     return { ok: false, error: "Some details need another look.", fieldErrors };
   }
   const d = parsed.data;
-  if (!(await rateLimit(await clientKey("checkout"), 20, 3600))) {
-    return { ok: false, error: "Too many attempts. Please wait a little, or order on WhatsApp." };
+  // Each attempt creates a Razorpay order, so keep attempts per visitor low.
+  if (d.website) return { ok: false, error: "Some details need another look." };
+  if (!(await rateLimit(await clientKey("checkout"), 10, 3600))) {
+    return { ok: false, error: "Too many attempts. Please wait a while and try again." };
+  }
+  // Site-wide ceiling as well, in case a flood comes from many addresses at once.
+  if (!(await rateLimit("checkout:site", 300, 3600))) {
+    return { ok: false, error: "We're very busy right now. Please try again in a few minutes." };
+  }
+  if (!hasDatabase() || (await paymentMode()) === "none") {
+    return { ok: false, error: "Online payment isn't available right now. Please try again a little later." };
   }
 
   const [{ priced, problems }, rules, coupon] = await Promise.all([priceLines(d.lines), getShippingRules(), findCoupon(d.coupon, d.phone)]);
   if (problems.length) return { ok: false, error: problems.join(" ") };
   if (coupon.error) return { ok: false, error: coupon.error, fieldErrors: { coupon: coupon.error } };
-  const totals = computeTotals(priced, rules, coupon.rule, d.method === "COD");
+  const totals = computeTotals(priced, rules, coupon.rule, false);
   if (totals.totalPaise !== d.expectedTotalPaise) {
     return {
       ok: false,
@@ -172,34 +183,16 @@ export async function placeOrder(input: CheckoutInput): Promise<PlaceResult> {
     };
   }
 
-  const address = [d.line1, d.line2, d.landmark, `${d.city}, ${d.state} ${d.pinCode}`].filter(Boolean).join(", ");
-
-  if (d.method === "WHATSAPP" || !hasDatabase()) {
-    const msg = [
-      `Hello ${SITE.name}, I would like to order:`,
-      ...priced.map((l) => `• ${l.quantity} × ${l.title} (${l.sku}) ${formatINR(l.unitPricePaise * l.quantity)}`),
-      totals.discountPaise ? `Discount (${coupon.rule?.code}): -${formatINR(totals.discountPaise)}` : null,
-      `Delivery: ${totals.shippingPaise ? formatINR(totals.shippingPaise) : "Free"}`,
-      `Total: ${formatINR(totals.totalPaise)}`,
-      "",
-      `Name: ${d.name}`,
-      `Phone: ${d.phone}`,
-      d.email ? `Email: ${d.email}` : null,
-      `Address: ${address}`,
-      d.note ? `Note: ${d.note}` : null,
-    ]
-      .filter((x) => x !== null)
-      .join("\n");
-    return { ok: true, kind: "whatsapp", url: whatsappLink(msg) };
-  }
-
-  if (d.method === "COD" && !rules.codEnabled) return { ok: false, error: "Cash on delivery isn't available right now." };
-  if (d.method === "RAZORPAY" && (await paymentMode()) === "none") return { ok: false, error: "Online payment isn't set up yet. Please order on WhatsApp." };
-
   const { db } = await import("@/server/db");
-  const { newOrderNumber, confirmOrder } = await import("@/features/orders/service");
+  const { newOrderNumber } = await import("@/features/orders/service");
   const h = await headers();
-  const ref = new URL(h.get("referer") ?? SITE.url);
+  const ref = (() => {
+    try {
+      return new URL(h.get("referer") ?? SITE.url);
+    } catch {
+      return new URL(SITE.url); // a forged or malformed Referer header
+    }
+  })();
 
   const order = await db.$transaction(async (tx) => {
     const customer = await tx.customer.upsert({
@@ -223,11 +216,11 @@ export async function placeOrder(input: CheckoutInput): Promise<PlaceResult> {
         number,
         status: "PENDING_PAYMENT",
         channel: "WEBSITE",
-        paymentMethod: d.method === "COD" ? "COD" : "RAZORPAY",
+        paymentMethod: "RAZORPAY",
         customerId: customer.id,
         contactName: d.name,
         contactPhone: d.phone,
-        contactEmail: d.email || null,
+        contactEmail: d.email,
         shipName: d.name,
         shipPhone: d.phone,
         shipLine1: d.line1,
@@ -244,9 +237,9 @@ export async function placeOrder(input: CheckoutInput): Promise<PlaceResult> {
         couponId: coupon.id,
         couponCode: coupon.rule?.code ?? null,
         customerNote: d.note || null,
-        utmSource: ref.searchParams.get("utm_source"),
-        utmMedium: ref.searchParams.get("utm_medium"),
-        utmCampaign: ref.searchParams.get("utm_campaign"),
+          utmSource: ref.searchParams.get("utm_source")?.slice(0, 100) ?? null,
+        utmMedium: ref.searchParams.get("utm_medium")?.slice(0, 100) ?? null,
+        utmCampaign: ref.searchParams.get("utm_campaign")?.slice(0, 100) ?? null,
         expiresAt: new Date(Date.now() + 30 * 60 * 1000),
         items: {
           create: priced.map((l) => ({
@@ -261,16 +254,11 @@ export async function placeOrder(input: CheckoutInput): Promise<PlaceResult> {
           })),
         },
         events: { create: { status: "PENDING_PAYMENT", message: "Order placed on the website" } },
-        payments: { create: { method: d.method === "COD" ? "COD" : "RAZORPAY", amountPaise: totals.totalPaise } },
+        payments: { create: { method: "RAZORPAY", amountPaise: totals.totalPaise } },
       },
       include: { payments: true },
     });
   });
-
-  if (d.method === "COD") {
-    await confirmOrder(order.id, null);
-    return { ok: true, kind: "cod", orderNumber: order.number, token: orderToken(order.number) };
-  }
 
   // The gateway order is created for exactly the order total stored above.
   let gw;
@@ -279,7 +267,7 @@ export async function placeOrder(input: CheckoutInput): Promise<PlaceResult> {
   } catch (err) {
     console.error("[payments] could not create Razorpay order", order.number, err instanceof Error ? err.message : err);
     await db.order.update({ where: { id: order.id }, data: { status: "EXPIRED" } }).catch(() => {});
-    return { ok: false, error: "We couldn't open the payment window just now. Nothing was charged. Please try again in a minute, or order on WhatsApp." };
+    return { ok: false, error: "We couldn't open the payment window just now. Nothing was charged. Please try again in a minute." };
   }
   await db.payment.update({ where: { id: order.payments[0]!.id }, data: { razorpayOrderId: gw.gatewayOrderId } });
 
@@ -292,7 +280,7 @@ export async function placeOrder(input: CheckoutInput): Promise<PlaceResult> {
     amountPaise: order.totalPaise,
     keyId: gw.keyId,
     name: d.name,
-    email: d.email || undefined,
+    email: d.email,
     phone: d.phone,
   };
 }
@@ -302,6 +290,7 @@ export async function verifyPayment(input: { razorpay_order_id: string; razorpay
   const v = z
     .object({ razorpay_order_id: z.string().max(64), razorpay_payment_id: z.string().max(64), razorpay_signature: z.string().max(256) })
     .parse(input);
+  if (!(await rateLimit(await clientKey("verify"), 30, 600))) return { ok: false as const };
   if (!hasDatabase() || !(await verifyCheckoutSignature(v.razorpay_order_id, v.razorpay_payment_id, v.razorpay_signature))) return { ok: false as const };
 
   const { db } = await import("@/server/db");
@@ -323,6 +312,7 @@ export async function verifyPayment(input: { razorpay_order_id: string; razorpay
 
 export async function lookupPin(pin: string): Promise<{ city: string; state: string } | null> {
   if (!/^[1-9]\d{5}$/.test(pin)) return null;
+  if (!(await rateLimit(await clientKey("pin"), 60, 600))) return null;
   if (hasDatabase()) {
     try {
       const { db } = await import("@/server/db");

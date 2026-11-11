@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Lock, MessageCircle } from "lucide-react";
+import { Lock } from "lucide-react";
 import { useBag } from "@/features/bag/bag-context";
 import { lookupPin, placeOrder, quoteCheckout, verifyPayment, type Quote } from "@/features/checkout/actions";
 import { TextArea, TextInput, Checkbox } from "@/components/ui/field";
@@ -44,7 +44,6 @@ export function CheckoutForm() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [coupon, setCoupon] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState("");
-  const [method, setMethod] = useState<"RAZORPAY" | "COD" | "WHATSAPP">("RAZORPAY");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -54,16 +53,18 @@ export function CheckoutForm() {
   const [refresh, setRefresh] = useState(0);
 
   const lines = items.map((i) => ({ slug: i.slug, quantity: i.quantity }));
-  const key = JSON.stringify(lines) + appliedCoupon + method + refresh;
+  const key = JSON.stringify(lines) + appliedCoupon + refresh;
 
   useEffect(() => {
     if (!ready || !lines.length) return;
     let live = true;
-    quoteCheckout({ lines, coupon: appliedCoupon, cod: method === "COD" }).then((q) => {
-      if (!live) return;
-      setQuote(q);
-      if (!q.canPayOnline && method === "RAZORPAY") setMethod(q.codAvailable ? "COD" : "WHATSAPP");
-    });
+    quoteCheckout({ lines, coupon: appliedCoupon })
+      .then((q) => {
+        if (live) setQuote(q);
+      })
+      .catch(() => {
+        if (live) setFormError("We couldn't work out the total. Please refresh the page.");
+      });
     if (!startedRef.current) {
       startedRef.current = true;
       track("checkout_started");
@@ -110,8 +111,9 @@ export function CheckoutForm() {
       pinCode: String(f.get("pinCode") ?? ""),
       note: String(f.get("note") ?? ""),
       coupon: appliedCoupon,
-      method,
+      method: "RAZORPAY" as const,
       marketing: f.get("marketing") === "on",
+      website: String(f.get("website") ?? ""),
       // The exact total on screen. The server refuses to charge anything different.
       expectedTotalPaise: quote?.totalPaise ?? -1,
     };
@@ -126,19 +128,9 @@ export function CheckoutForm() {
         return;
       }
       setErrors({});
-      if (res.kind === "whatsapp") {
-        track("whatsapp_click", { meta: { from: "checkout" } });
-        window.open(res.url, "_blank", "noopener");
-        return;
-      }
-      if (res.kind === "cod") {
-        clear();
-        router.push(`/order/${res.orderNumber}?placed=1&t=${res.token}`);
-        return;
-      }
       const loaded = await loadRazorpay();
       if (!loaded || !window.Razorpay) {
-        setFormError("The payment window could not load. Check your connection, or order on WhatsApp.");
+        setFormError("The payment window could not load. Check your connection and try again.");
         return;
       }
       const rzp = new window.Razorpay({
@@ -162,18 +154,6 @@ export function CheckoutForm() {
     });
   }
 
-  const methods = [
-    quote?.canPayOnline
-      ? {
-          id: "RAZORPAY" as const,
-          title: "Pay online",
-          text: "UPI, cards, netbanking or wallets, through Razorpay.",
-        }
-      : null,
-    quote?.codAvailable ? { id: "COD" as const, title: "Cash on delivery", text: "Pay when the books arrive." } : null,
-    { id: "WHATSAPP" as const, title: "Order on WhatsApp", text: "We confirm the order and share payment details in chat." },
-  ].filter((m) => m !== null);
-
   return (
     <form
       noValidate
@@ -195,7 +175,7 @@ export function CheckoutForm() {
           <TextInput label="Full name" name="name" autoComplete="name" required error={errors.name} />
           <div className="grid gap-5 sm:grid-cols-2">
             <TextInput label="Mobile number" name="phone" type="tel" inputMode="tel" autoComplete="tel-national" required error={errors.phone} hint="For delivery updates." />
-            <TextInput label="Email" name="email" type="email" autoComplete="email" optional error={errors.email} hint="For your receipt." />
+            <TextInput label="Email" name="email" type="email" autoComplete="email" required error={errors.email} hint="Your order confirmation is sent here." />
           </div>
         </fieldset>
 
@@ -240,25 +220,24 @@ export function CheckoutForm() {
         </fieldset>
 
         <fieldset>
-          <legend className="font-display text-h3">How would you like to pay?</legend>
-          <div className="mt-5 grid gap-3">
-            {methods.map((m) => (
-              <label
-                key={m.id}
-                className={cn(
-                  "flex cursor-pointer gap-4 rounded-2xl border p-5 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-leaf",
-                  method === m.id ? "border-leaf bg-leaf/5" : "border-line hover:border-ink/30",
-                )}
-              >
-                <input type="radio" name="method" className="mt-1 size-4 accent-leaf" checked={method === m.id} onChange={() => setMethod(m.id)} />
-                <span>
-                  <span className="block font-medium">{m.title}</span>
-                  <span className="block text-small text-ink-soft">{m.text}</span>
-                </span>
-              </label>
-            ))}
-          </div>
+          <legend className="font-display text-h3">Payment</legend>
+          {quote && !quote.canPayOnline ? (
+            <p className="mt-5 rounded-2xl border border-clay/40 bg-clay/5 p-5 text-small">
+              Online payment isn&apos;t available right now, so orders can&apos;t be placed. Please try again a little later.
+            </p>
+          ) : (
+            <div className="mt-5 flex gap-4 rounded-2xl border border-leaf bg-leaf/5 p-5">
+              <Lock className="mt-0.5 size-4 shrink-0 text-leaf" strokeWidth={1.5} aria-hidden="true" />
+              <span>
+                <span className="block font-medium">Pay securely online</span>
+                <span className="block text-small text-ink-soft">UPI, cards, netbanking or wallets, through Razorpay. Your order is confirmed as soon as the payment goes through.</span>
+              </span>
+            </div>
+          )}
         </fieldset>
+
+        {/* Bot trap: hidden from people and screen readers; bots fill it in. */}
+        <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute -left-[9999px] h-px w-px opacity-0" />
 
         <Checkbox name="marketing" label="Email me when a new book or free resource comes out" hint="Optional. You can unsubscribe at any time." />
       </div>
@@ -313,12 +292,6 @@ export function CheckoutForm() {
               <dt>Delivery</dt>
               <dd className="tabular-nums">{quote ? (quote.shippingPaise ? formatINR(quote.shippingPaise) : "Free") : "…"}</dd>
             </div>
-            {quote?.codFeePaise ? (
-              <div className="flex justify-between">
-                <dt>Cash on delivery fee</dt>
-                <dd className="tabular-nums">{formatINR(quote.codFeePaise)}</dd>
-              </div>
-            ) : null}
             <div className="flex items-baseline justify-between border-t border-line pt-3">
               <dt className="font-medium">Total</dt>
               <dd className="font-display text-h3 tabular-nums">{quote ? formatINR(quote.totalPaise) : "…"}</dd>
@@ -326,15 +299,9 @@ export function CheckoutForm() {
           </dl>
           {quote?.problems.length ? <p className="mt-3 text-small font-medium text-clay">{quote.problems.join(" ")}</p> : null}
 
-          <Button type="submit" size="lg" disabled={pending || !quote || quote.problems.length > 0} className="mt-6 w-full">
+          <Button type="submit" size="lg" disabled={pending || !quote || !quote.canPayOnline || quote.problems.length > 0} className="mt-6 w-full">
             {pending ? (
               "Working…"
-            ) : method === "WHATSAPP" ? (
-              <>
-                <MessageCircle className="size-4" strokeWidth={1.5} aria-hidden="true" /> Send order on WhatsApp
-              </>
-            ) : method === "COD" ? (
-              "Place order"
             ) : (
               <>
                 <Lock className="size-4" strokeWidth={1.5} aria-hidden="true" /> Pay {quote ? formatINR(quote.totalPaise) : ""}

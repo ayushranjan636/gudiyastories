@@ -13,7 +13,7 @@ if (!process.env.DATABASE_URL && !/^DATABASE_URL="?postgres/m.test(env)) {
 `);
 } else {
   try {
-    const { ensureClient, applyMigrations, importPosts, readEnv } = await import("./lib-local.mjs");
+    const { ensureClient, applyMigrations, importPosts, importSpreads, readEnv } = await import("./lib-local.mjs");
     ensureClient();
     const pg = (await import("pg")).default;
     const client = new pg.Client({ connectionString: process.env.DATABASE_URL || readEnv().DATABASE_URL, connectionTimeoutMillis: 3000 });
@@ -21,6 +21,7 @@ if (!process.env.DATABASE_URL && !/^DATABASE_URL="?postgres/m.test(env)) {
     try {
       await applyMigrations(client);
       await importPosts(client);
+      await importSpreads(client);
     } finally {
       await client.end();
     }

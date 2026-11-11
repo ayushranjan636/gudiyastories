@@ -48,7 +48,6 @@ export const HELP: Record<string, HelpPage> = {
         heading: "How refunds work",
         body: [
           "Online payments are refunded to the original method through Razorpay. Banks usually take 5 to 7 working days to show it.",
-          "Cash on delivery orders are refunded by UPI or bank transfer.",
         ],
       },
     ],
@@ -71,8 +70,8 @@ export const HELP: Record<string, HelpPage> = {
         ],
       },
       {
-        heading: "Can I order on WhatsApp instead?",
-        body: ["Yes. Every book page and the checkout have a WhatsApp option. We confirm the order and share payment details in the chat."],
+        heading: "How do I pay?",
+        body: ["Online at checkout, by UPI, card, netbanking or wallet, through Razorpay. Your order is confirmed the moment the payment goes through, and we email you a receipt. For bulk orders for schools, use the For schools page."],
       },
       {
         heading: "Do you sell on Amazon or Flipkart?",
@@ -124,7 +123,7 @@ export const HELP: Record<string, HelpPage> = {
       {
         heading: "Orders",
         body: [
-          "An order is confirmed when payment succeeds, or when we confirm a cash on delivery or WhatsApp order. If a book turns out to be out of stock after you've paid, we'll refund that part in full.",
+          "An order is confirmed when the online payment succeeds. If a book turns out to be out of stock after you've paid, we'll refund that part in full.",
         ],
       },
       {
