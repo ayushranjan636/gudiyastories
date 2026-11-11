@@ -80,6 +80,18 @@ if [ -z "$healthy" ]; then
 fi
 say "Live: $(curl -fsS http://127.0.0.1:3000/api/health)"
 
+# Pages pre-built without a database get rebuilt from the live one on their next visit.
+SECRET="$(sudo grep -E '^CRON_SECRET=' "$BASE/shared/.env" | head -1 | cut -d= -f2- | tr -d '"')"
+curl -fsS -X POST -H "Authorization: Bearer $SECRET" http://127.0.0.1:3000/api/cron/revalidate >/dev/null && say "Pages refreshed from the live database." || printf '\033[33m!\033[0m %s\n' "Couldn't refresh pages (they refresh on their own within the hour)."
+# Warm every page twice (first visit triggers the rebuild, second confirms it), so
+# real visitors never see a page built without the database.
+PAGES=$(curl -fsS --max-time 20 http://127.0.0.1:3000/sitemap.xml | grep -o '<loc>[^<]*' | sed -E 's#<loc>https?://[^/]+##' || true)
+for round in 1 2; do
+  for p in / $PAGES; do curl -fsS -o /dev/null --max-time 20 "http://127.0.0.1:3000$p" || true; done
+  [ "$round" = 1 ] && sleep 3
+done
+say "Warmed $(echo "$PAGES" | wc -w | tr -d ' ') pages."
+
 # Keep the last few releases for quick rollbacks, and only the packages they use.
 ls -1dt "$BASE"/releases/*/ | tail -n +$((KEEP + 1)) | while read -r old; do
   [ "$(readlink -f "$BASE/current")/" = "$old" ] || sudo rm -rf "$old"

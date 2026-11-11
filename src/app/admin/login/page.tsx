@@ -6,6 +6,9 @@ import { hasDatabase } from "@/server/env";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in", robots: { index: false, follow: false } };
+// Always check the live database at request time, never at build time (the build
+// machine has no database, which would otherwise freeze a "no database" notice in).
+export const dynamic = "force-dynamic";
 
 export default async function LoginPage() {
   if (hasDatabase()) {
