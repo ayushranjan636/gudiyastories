@@ -47,6 +47,7 @@ jobs:
       - name: Build
         env:
           NEXT_DIST_DIR: .next-deploy
+          NEXT_DEPLOYMENT_ID: ${{ github.sha }}
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: "1"
           NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL }}

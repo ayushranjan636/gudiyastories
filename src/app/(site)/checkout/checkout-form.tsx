@@ -58,12 +58,23 @@ export function CheckoutForm() {
   useEffect(() => {
     if (!ready || !lines.length) return;
     let live = true;
+    // One quiet retry, then (if the site was just updated and this page is from the
+    // old version) a single automatic reload. Only after that is an error shown.
     quoteCheckout({ lines, coupon: appliedCoupon })
+      .catch(() => new Promise((r) => setTimeout(r, 800)).then(() => quoteCheckout({ lines, coupon: appliedCoupon })))
       .then((q) => {
-        if (live) setQuote(q);
+        if (!live) return;
+        setQuote(q);
+        sessionStorage.removeItem("gs-checkout-reloaded");
       })
       .catch(() => {
-        if (live) setFormError("We couldn't work out the total. Please refresh the page.");
+        if (!live) return;
+        if (!sessionStorage.getItem("gs-checkout-reloaded")) {
+          sessionStorage.setItem("gs-checkout-reloaded", "1");
+          window.location.reload();
+          return;
+        }
+        setFormError("We couldn't work out the total. Please check your connection and refresh the page.");
       });
     if (!startedRef.current) {
       startedRef.current = true;
@@ -119,7 +130,15 @@ export function CheckoutForm() {
     };
     setFormError(null);
     start(async () => {
-      const res = await placeOrder(input);
+      let res: Awaited<ReturnType<typeof placeOrder>>;
+      try {
+        res = await placeOrder(input);
+      } catch {
+        // Usually: the site was updated while this page was open. Reload to get the new version.
+        setFormError("The page needs a quick refresh. Reloading…");
+        setTimeout(() => window.location.reload(), 1200);
+        return;
+      }
       if (!res.ok) {
         setErrors(res.fieldErrors ?? {});
         setFormError(res.error);

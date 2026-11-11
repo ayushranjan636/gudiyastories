@@ -50,6 +50,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Deploy builds (GitHub Actions) go to .next-deploy; local dev keeps .next.
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // A new id per deploy (the git commit, set by GitHub Actions). Pages open in a
+  // browser from the previous version then reload themselves instead of calling
+  // server code that no longer exists ("Failed to find Server Action").
+  ...(process.env.NEXT_DEPLOYMENT_ID ? { deploymentId: process.env.NEXT_DEPLOYMENT_ID } : {}),
   typedRoutes: true,
   poweredByHeader: false,
   turbopack: {
