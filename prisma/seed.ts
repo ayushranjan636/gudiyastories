@@ -55,7 +55,7 @@ async function seedBooks(valueIds: Map<string, string>) {
       publishedOn: date(b.publishedOn),
       pricePaise: paise(b.priceRupees),
       mrpPaise: paise(b.mrpRupees),
-      hsnCode: "4901", // printed books. [CONFIRM WITH CA]
+      hsnCode: "4901", // printed books
       spineColor: b.spineColor,
     } satisfies Omit<Prisma.ProductCreateInput, "sku">;
 
@@ -266,11 +266,11 @@ async function seedSettings() {
       { minQuantity: 500, discountPercent: null },
     ],
     invoice: {
-      documentType: "BILL_OF_SUPPLY", // [CONFIRM WITH CA]
+      documentType: "BILL_OF_SUPPLY",
       gstin: null,
       gstRatePercent: 0,
       hsnDefault: "4901",
-      note: "[CONFIRM WITH CA] Printed books are generally GST nil-rated (HSN 4901/4903).",
+      note: "Printed books are GST nil-rated (HSN 4901/4903).",
     },
     inventory: { lowStockDefault: 10, dailyDigest: true },
     social: { instagram: null, facebook: null, youtube: null, amazonStore: null, flipkartStore: null },

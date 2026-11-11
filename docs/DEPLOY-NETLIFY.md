@@ -81,7 +81,7 @@ You don't create any tables yourself. The first Netlify build creates them and a
 | `AWS_ACCESS_KEY_ID` | R2 Access Key ID |
 | `AWS_SECRET_ACCESS_KEY` | R2 Secret Access Key |
 | `RESEND_API_KEY` | **required**: [resend.com](https://resend.com) → API Keys (free: 3,000 emails/month) |
-| `EMAIL_FROM` | **required**: e.g. `Gudiya Stories <orders@gudiyastories.com>` (verify the domain in Resend first) |
+| `EMAIL_FROM` | **required**: e.g. `Gudiya Stories <noreply@gudiyastories.com>` (verify the domain in Resend first) |
 | `OWNER_NOTIFICATION_EMAIL` | **required**: where "New order" emails go, e.g. the owner's Gmail |
 
    `NEXT_PUBLIC_SITE_URL` and `S3_PUBLIC_URL` are built into the site, so after changing either one, trigger a new deploy (**Deploys → Trigger deploy**).

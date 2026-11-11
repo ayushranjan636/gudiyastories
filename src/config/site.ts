@@ -14,7 +14,7 @@ export const SITE = {
   author: "S.V. Bharathi",
   instagram: "https://www.instagram.com/gudiyastories/",
   instagramHandle: "gudiyastories",
-  // Free delivery threshold and flat rate. [CONFIRM] in docs/CONTENT-TODO.md.
+  // Free delivery threshold and flat rate (Admin → Settings → Delivery charges overrides these).
   freeShippingFromPaise: 49900,
   flatShippingPaise: 6000,
 } as const;

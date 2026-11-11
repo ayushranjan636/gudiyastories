@@ -97,7 +97,7 @@ After every **paid** order, two emails go out:
 
 | Email | To | From | Replies go to |
 | --- | --- | --- | --- |
-| Order confirmation + receipt link | the customer | `Gudiya Stories <orders@gudiyastories.com>` | `svbharathi@gudiyastories.com` (Zoho inbox) |
+| Order confirmation + receipt link | the customer | `Gudiya Stories <noreply@gudiyastories.com>` | `svbharathi@gudiyastories.com` (Zoho inbox) |
 | "New order GS-…" with items, phone, address, admin link | you (`OWNER_NOTIFICATION_EMAIL`) | same | same |
 
 **Setup (about 10 minutes):**

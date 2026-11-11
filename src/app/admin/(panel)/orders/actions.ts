@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/server/db";
 import { audit, requireAdmin } from "@/server/admin";
-import { sendEmail } from "@/server/email";
 import { SITE } from "@/config/site";
+import { sendStatusEmail } from "@/features/orders/notifications";
 import { unitsForOrder, newOrderNumber, confirmOrder } from "@/features/orders/service";
 import { getCatalogue } from "@/features/catalogue/repo";
 import { createHash, randomBytes } from "node:crypto";
@@ -19,19 +19,15 @@ async function load(id: string) {
   return o;
 }
 
-async function notify(orderId: string, subject: string, text: string) {
-  const o = await db.order.findUnique({ where: { id: orderId } });
-  if (o?.contactEmail) await sendEmail({ to: o.contactEmail, subject, text });
-}
-
 export async function markPacked(id: string): Promise<ActionResult> {
   const admin = await requireAdmin();
   const o = await load(id);
   if (o.status !== "PAID") return { ok: false, message: "Only confirmed orders can be packed." };
   await db.order.update({ where: { id }, data: { status: "PACKED", packedAt: new Date(), events: { create: { status: "PACKED", message: "Packed", adminUserId: admin.id } } } });
   await audit(admin, "UPDATE", "Order", id, { status: o.status }, { status: "PACKED" });
+  const mail = await sendStatusEmail(id, { kind: "packed" });
   revalidatePath(`/admin/orders/${id}`);
-  return { ok: true, message: "Marked as packed." };
+  return { ok: true, message: mail === "sent" ? "Marked as packed. The customer has been emailed." : "Marked as packed." };
 }
 
 const shipSchema = z.object({
@@ -58,13 +54,9 @@ export async function markShipped(id: string, input: z.input<typeof shipSchema>)
     },
   });
   await audit(admin, "UPDATE", "Order", id, { status: o.status }, { status: "SHIPPED", ...s });
-  await notify(
-    id,
-    `Your Gudiya Stories order ${o.number} is on its way`,
-    `Hello ${o.contactName.split(" ")[0]},\n\nYour books have left Tirupati with ${s.courier}.\nTracking number: ${s.trackingNumber}${s.trackingUrl ? `\nTrack it here: ${s.trackingUrl}` : ""}\n\nYou can also check at ${SITE.url}/track.\n\nGudiya Stories`,
-  );
+  const mail = await sendStatusEmail(id, { kind: "shipped", courier: s.courier, trackingNumber: s.trackingNumber, trackingUrl: s.trackingUrl || null });
   revalidatePath(`/admin/orders/${id}`);
-  return { ok: true, message: "Marked as shipped. The customer has been emailed if they gave an email." };
+  return { ok: true, message: mail === "sent" ? "Marked as shipped. The customer has been emailed the tracking details." : "Marked as shipped." };
 }
 
 export async function markDelivered(id: string): Promise<ActionResult> {
@@ -83,11 +75,7 @@ export async function markDelivered(id: string): Promise<ActionResult> {
   // A private link to review the books. Only its hash is stored.
   const token = randomBytes(24).toString("base64url");
   await db.order.update({ where: { id }, data: { reviewTokenHash: createHash("sha256").update(token).digest("hex") } });
-  await notify(
-    id,
-    "How did the books go down?",
-    `Hello ${o.contactName.split(" ")[0]},\n\nYour Gudiya Stories order ${o.number} was delivered. Once you've read them together, we'd love to hear what your child made of the books. It takes a minute:\n\n${SITE.url}/review/${token}\n\nThank you,\nGudiya Stories`,
-  );
+  await sendStatusEmail(id, { kind: "delivered", reviewUrl: `${SITE.url.replace(/\/$/, "")}/review/${token}` });
   revalidatePath(`/admin/orders/${id}`);
   return { ok: true, message: o.paymentMethod === "COD" ? "Delivered, and the cash payment is recorded." : "Marked as delivered." };
 }
@@ -110,8 +98,9 @@ export async function cancelOrder(id: string, restock: boolean, reason: string):
     });
   });
   await audit(admin, "UPDATE", "Order", id, { status: o.status }, { status: "CANCELLED", restock, reason });
-  revalidatePath(`/admin/orders/${id}`);
   const paidOnline = o.paymentMethod === "RAZORPAY" && stockWasTaken;
+  if (stockWasTaken) await sendStatusEmail(id, { kind: "cancelled", reason: reason || null, refundDue: paidOnline });
+  revalidatePath(`/admin/orders/${id}`);
   return { ok: true, message: paidOnline ? "Cancelled. It was paid online, so issue a refund below." : "Cancelled." };
 }
 
@@ -136,8 +125,8 @@ export async function refundOrder(id: string, amountRupees: number, restock: boo
     }
   }
   const full = amountPaise + refunded >= payment.amountPaise;
-  await db.$transaction(async (tx) => {
-    await tx.refund.create({
+  const refund = await db.$transaction(async (tx) => {
+    const created = await tx.refund.create({
       data: { orderId: id, paymentId: payment.id, razorpayRefundId, amountPaise, reason: reason || null, restocked: restock, status: razorpayRefundId ? "PENDING" : "PROCESSED", adminUserId: admin.id },
     });
     await tx.payment.update({ where: { id: payment.id }, data: { status: full ? "REFUNDED" : "PARTIALLY_REFUNDED" } });
@@ -154,8 +143,10 @@ export async function refundOrder(id: string, amountRupees: number, restock: boo
         events: { create: { status: full ? "REFUNDED" : null, message: `Refunded ₹${amountRupees}${reason ? `: ${reason}` : ""}`, adminUserId: admin.id } },
       },
     });
+    return created;
   });
   await audit(admin, "CREATE", "Refund", id, undefined, { amountPaise, restock, reason });
+  await sendStatusEmail(id, { kind: "refunded", refundKey: refund.id, amountPaise, full });
   revalidatePath(`/admin/orders/${id}`);
   return { ok: true, message: razorpayRefundId ? "Refund sent to Razorpay. Banks usually take 5 to 7 working days." : "Refund recorded." };
 }

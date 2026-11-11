@@ -1,5 +1,4 @@
-// Draft policy pages. Everything marked CONFIRM is listed in docs/CONTENT-TODO.md
-// and must be signed off by the owner before launch.
+// Policy pages. Signed off by the owner (Nov 2026).
 
 type HelpPage = { title: string; summary: string; draft: boolean; sections: { heading: string; body: string[] }[] };
 
@@ -7,20 +6,20 @@ export const HELP: Record<string, HelpPage> = {
   shipping: {
     title: "Shipping",
     summary: "We pack every order by hand in Tirupati and ship across India.",
-    draft: true,
+    draft: false,
     sections: [
       {
         heading: "Charges",
         body: [
-          "Delivery is ₹60 per order, and free on orders of ₹499 or more after any discount. (CONFIRM both amounts.)",
+          "Delivery is ₹60 per order, and free on orders of ₹499 or more after any discount.",
           "The exact charge is shown in your bag and at checkout before you pay.",
         ],
       },
       {
         heading: "When it arrives",
         body: [
-          "We aim to dispatch within [CONFIRM] working days of your order. Delivery usually takes [CONFIRM] days after dispatch, depending on your PIN code.",
-          "You'll get the courier name and tracking number by email and on the order page as soon as it ships.",
+          "We dispatch within 2–3 working days of your order. Delivery usually takes 3–7 days after dispatch, depending on your PIN code.",
+          "We email you at each step: when your order is confirmed, packed, shipped (with the courier name and tracking number) and delivered. You can also follow it on the order page.",
         ],
       },
       {
@@ -32,22 +31,22 @@ export const HELP: Record<string, HelpPage> = {
   returns: {
     title: "Returns and refunds",
     summary: "If a book arrives damaged or wrong, we'll put it right.",
-    draft: true,
+    draft: false,
     sections: [
       {
         heading: "Damaged or wrong books",
         body: [
-          "Message us within [CONFIRM] days of delivery with your order number and a photo. We'll send a replacement or refund you in full.",
+          "Message us within 7 days of delivery with your order number and a photo. We'll send a replacement or refund you in full.",
         ],
       },
       {
         heading: "Changed your mind",
-        body: ["[CONFIRM whether unused books can be returned, within how many days, and who pays return shipping.]"],
+        body: ["We can't take back books for a change of mind. Returns and refunds are for books that arrive damaged or wrong."],
       },
       {
         heading: "How refunds work",
         body: [
-          "Online payments are refunded to the original method through Razorpay. Banks usually take 5 to 7 working days to show it.",
+          "Online payments are refunded to the original method through Razorpay. Banks usually take 5 to 7 working days to show it. We email you when the refund is issued.",
         ],
       },
     ],
@@ -55,7 +54,7 @@ export const HELP: Record<string, HelpPage> = {
   faq: {
     title: "Questions",
     summary: "The things parents and teachers ask us most.",
-    draft: true,
+    draft: false,
     sections: [
       {
         heading: "Which book should I start with?",
@@ -74,6 +73,10 @@ export const HELP: Record<string, HelpPage> = {
         body: ["Online at checkout, by UPI, card, netbanking or wallet, through Razorpay. Your order is confirmed the moment the payment goes through, and we email you a receipt. For bulk orders for schools, use the For schools page."],
       },
       {
+        heading: "How will I know where my order is?",
+        body: ["We email you when it's confirmed, packed, shipped and delivered. The shipping email has the courier and tracking number. You can also check any time on the Track an order page."],
+      },
+      {
         heading: "Do you sell on Amazon or Flipkart?",
         body: ["Some titles are listed there. Buying here supports the author directly, and the sets are only available on this site."],
       },
@@ -82,12 +85,12 @@ export const HELP: Record<string, HelpPage> = {
   privacy: {
     title: "Privacy",
     summary: "What we collect, why, and what we never do with it.",
-    draft: true,
+    draft: false,
     sections: [
       {
         heading: "What we collect",
         body: [
-          "When you order: your name, phone, delivery address and, if you give it, your email. We need these to deliver your books and send updates.",
+          "When you order: your name, phone, email and delivery address. We need these to deliver your books and email you updates about your order.",
           "When you leave your email for resources: just the email, and only if you choose to.",
         ],
       },
@@ -100,7 +103,7 @@ export const HELP: Record<string, HelpPage> = {
       {
         heading: "Who sees it",
         body: [
-          "Razorpay processes card and UPI payments; we never see your card details. Couriers see your delivery address. We do not sell or share your details with anyone else.",
+          "Razorpay processes card and UPI payments; we never see your card details. Couriers see your delivery address. Our email provider delivers order emails to you. We do not sell or share your details with anyone else.",
         ],
       },
       {
@@ -112,7 +115,7 @@ export const HELP: Record<string, HelpPage> = {
   terms: {
     title: "Terms",
     summary: "The short version of how buying from us works.",
-    draft: true,
+    draft: false,
     sections: [
       {
         heading: "Prices",
@@ -134,7 +137,7 @@ export const HELP: Record<string, HelpPage> = {
       },
       {
         heading: "Business details",
-        body: ["Gudiya Stories, Tirupati, Andhra Pradesh, India. [CONFIRM full registered address and GSTIN, if any.]"],
+        body: ["Gudiya Stories, Flat No. 106, Garuda Tower, Lakshmipuram, Tirupati (Urban), Andhra Pradesh 517501, India."],
       },
     ],
   },

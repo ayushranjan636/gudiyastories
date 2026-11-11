@@ -40,11 +40,6 @@ export default async function HelpPage({ params }: Props) {
       <article className="lg:col-span-8">
         <h1 className="text-h2">{h.title}</h1>
         <p className="mt-4 text-lead text-ink-soft">{h.summary}</p>
-        {h.draft ? (
-          <p className="mt-6 rounded-xl border border-dashed border-clay/50 px-4 py-3 text-small text-clay">
-            [REVIEW BY OWNER] This page is a draft. Details marked CONFIRM need the owner&apos;s sign-off before launch.
-          </p>
-        ) : null}
         <div className="mt-10 space-y-10">
           {h.sections.map((s) => (
             <section key={s.heading}>

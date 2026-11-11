@@ -137,7 +137,6 @@ export default async function PrintOrder({ params }: { params: Promise<{ id: str
         </dl>
         <p className="mt-6 text-[11px] text-ink-soft">
           {docTitle === "Bill of supply" ? "Printed books are supplied under a bill of supply. " : ""}
-          {inv.note?.includes("CONFIRM") ? "[CONFIRM WITH CA before using this bill for real orders.]" : ""}
         </p>
       </section>
     </div>
