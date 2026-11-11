@@ -5,10 +5,14 @@ import { parseFilters } from "@/features/catalogue/filters";
 import { BooksBrowser } from "./books-browser";
 import { JsonLd } from "@/components/site/json-ld";
 import { SITE } from "@/config/site";
+import Link from "next/link";
+import { COLLECTIONS } from "@/content/collections";
 
 export const metadata: Metadata = {
-  title: "Books",
-  description: "Value-based picture books for ages 4 to 13, and mindful colouring books. Choose by value, then by age.",
+  title: "Children's Picture Books & Mandala Colouring Books",
+  description:
+    "Value-based picture books for ages 4 to 13 and mindful mandala colouring books, written by early-years teacher S.V. Bharathi. Choose by value, then by age. Delivered across India.",
+  alternates: { canonical: "/books" },
 };
 
 export default async function BooksPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -34,6 +38,13 @@ export default async function BooksPage({ searchParams }: { searchParams: Promis
           printed in India.
         </p>
       </header>
+      <nav aria-label="Popular choices" className="mt-6 flex flex-wrap gap-2">
+        {COLLECTIONS.map((c) => (
+          <Link key={c.slug} href={`/books/${c.slug}`} className="rounded-full border border-line px-3 py-1 text-small transition-colors hover:border-ink hover:text-leaf">
+            {c.eyebrow}
+          </Link>
+        ))}
+      </nav>
       <div className="mt-10">
         <Suspense>
           <BooksBrowser items={items} values={values} initial={parseFilters(sp)} />

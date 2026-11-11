@@ -27,6 +27,9 @@ export type CatalogueProduct = {
   goodFor: string[];
   amazonUrl: string | null;
   flipkartUrl: string | null;
+  /** Typed in Admin → Products → SEO; empty means the page works it out. */
+  seoTitle: string | null;
+  seoDescription: string | null;
   featured: boolean;
   spreads: CatalogueImage[];
   /** Bundle contents, by product slug. Empty for single books. */

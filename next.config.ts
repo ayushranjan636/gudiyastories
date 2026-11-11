@@ -63,6 +63,13 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: securityHeaders },
       { source: "/admin/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+      // Pictures and videos in /public: browsers keep them for a month. A changed file
+      // should get a new name (or wait a month) — the pages themselves are never cached this long.
+      {
+        source: "/:dir(books|brand|readers|gallery|recognition|sets|authors|videos|resources)/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=2592000, stale-while-revalidate=86400" }],
+      },
+      { source: "/og-home.jpg", headers: [{ key: "Cache-Control", value: "public, max-age=2592000" }] },
     ];
   },
   images: {

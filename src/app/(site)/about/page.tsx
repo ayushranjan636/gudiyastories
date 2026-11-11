@@ -67,7 +67,7 @@ export default function AboutPage() {
               width={600}
               height={800}
               preload
-              className="aspect-[4/5] w-full object-cover grayscale"
+              sizes="(min-width: 1024px) 380px, 90vw" className="aspect-[4/5] w-full object-cover grayscale"
             />
             <figcaption className="absolute right-0 bottom-3 left-0 text-center font-display text-ink-soft">S.V. Bharathi</figcaption>
           </figure>

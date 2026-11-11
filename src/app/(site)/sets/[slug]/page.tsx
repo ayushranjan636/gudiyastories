@@ -9,6 +9,7 @@ import { formatINR } from "@/lib/money";
 import { formatAges } from "@/lib/format";
 import { JsonLd } from "@/components/site/json-ld";
 import { SITE } from "@/config/site";
+import { AlsoOn } from "@/components/book/also-on";
 import { BuyBox, MobileBuyBar } from "../../books/[slug]/buy-box";
 import { FannedCovers } from "./fanned-covers";
 import { BUNDLES } from "../../../../../prisma/data/catalogue";
@@ -87,6 +88,7 @@ export default async function SetPage({ params }: Params) {
               coverId={coverId}
               showMrpSaving={false}
             />
+            <AlsoOn product={set} className="mt-6" />
           </div>
         </div>
       </section>
@@ -99,7 +101,7 @@ export default async function SetPage({ params }: Params) {
           {parts.map((p, i) => (
             <li key={p.slug} className="grid grid-cols-[2rem_4.5rem_1fr_auto] items-center gap-4 border-b border-line py-5 sm:gap-6">
               <span className="text-small text-ink-soft tabular-nums">0{i + 1}</span>
-              <Image src={p.cover.src} alt="" width={p.cover.width} height={p.cover.height} className="w-[4.5rem] rounded-[2px]" />
+              <Image src={p.cover.src} alt={p.cover.alt} width={p.cover.width} height={p.cover.height} sizes="72px" className="w-[4.5rem] rounded-[2px]" />
               <div className="min-w-0">
                 <Link href={`/books/${p.slug}`} className="font-display text-h4 hover:text-leaf">
                   {p.title}

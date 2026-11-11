@@ -58,6 +58,8 @@ async function databaseCatalogue(): Promise<Catalogue> {
       goodFor: p.goodFor,
       amazonUrl: p.amazonUrl,
       flipkartUrl: p.flipkartUrl,
+      seoTitle: p.seoTitle,
+      seoDescription: p.seoDescription,
       featured: p.featured,
       spreads: p.spreads.map((s) => ({ src: s.url, width: s.width ?? 800, height: s.height ?? 600, alt: s.alt })),
       components: p.bundleItems.map((bi) => ({ slug: bi.component.slug, quantity: bi.quantity })),

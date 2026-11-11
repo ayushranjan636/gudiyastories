@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE } from "@/config/site";
 import { HELP } from "@/content/help";
+import { COLLECTIONS } from "@/content/collections";
 import { getCatalogue } from "@/features/catalogue/repo";
 import { getPublishedPosts } from "@/features/blog/repo";
 import { getClasses } from "@/features/classes/repo";
@@ -26,6 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     page("/gallery", 0.6),
     page("/about", 0.5),
     ...products.map((p) => page(p.type === "BUNDLE" ? `/sets/${p.slug}` : `/books/${p.slug}`, 0.8)),
+    ...COLLECTIONS.map((c) => page(`/books/${c.slug}`, 0.7)),
     ...classes.map((c) => page(`/classes/${c.slug}`, 0.7)),
     ...posts.map((p) => page(`/blog/${p.slug}`, 0.5, p.publishedAt)),
     ...Object.keys(HELP).map((topic) => page(`/help/${topic}`, 0.3)),

@@ -32,6 +32,8 @@ export function staticCatalogue(): Catalogue {
     goodFor: [],
     amazonUrl: null,
     flipkartUrl: null,
+    seoTitle: null,
+    seoDescription: null,
     featured: b.type === "STORY",
     // "Look inside": the cover, then sample pages and the back cover.
     spreads: b.inside?.length ? [b.cover, ...b.inside] : [],

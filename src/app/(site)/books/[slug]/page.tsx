@@ -11,8 +11,13 @@ import { JsonLd } from "@/components/site/json-ld";
 import { Reveal } from "@/components/motion/reveal";
 import { formatINR } from "@/lib/money";
 import { formatAges, formatDate } from "@/lib/format";
-import { SITE } from "@/config/site";
+import { SITE, whatsappLink } from "@/config/site";
 import { getApprovedReviews } from "@/features/reviews/repo";
+import { AlsoOn } from "@/components/book/also-on";
+import { BOOK_GUIDES } from "@/content/book-guides";
+import { COLLECTIONS, COLLECTION_BY_SLUG } from "@/content/collections";
+import { CollectionView } from "@/components/book/collection-view";
+import { getShippingRules } from "@/server/settings";
 import { Valley } from "@/components/home/valley";
 import { BuyBox, MobileBuyBar } from "./buy-box";
 import { InUseStrip } from "@/components/book/in-use";
@@ -22,23 +27,57 @@ type Params = { params: Promise<{ slug: string }> };
 
 export async function generateStaticParams() {
   const { products } = await getCatalogue();
-  return products.filter((p) => p.type !== "BUNDLE").map((p) => ({ slug: p.slug }));
+  return [...products.filter((p) => p.type !== "BUNDLE").map((p) => ({ slug: p.slug })), ...COLLECTIONS.map((c) => ({ slug: c.slug }))];
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const p = await getProduct((await params).slug);
+  const slug = (await params).slug;
+  const col = COLLECTION_BY_SLUG.get(slug);
+  if (col) {
+    return {
+      title: col.title,
+      description: col.description,
+      alternates: { canonical: `/books/${col.slug}` },
+      openGraph: {
+        title: `${col.title} · Gudiya Stories`,
+        description: col.description,
+        url: `/books/${col.slug}`,
+        siteName: "Gudiya Stories",
+        locale: "en_IN",
+        type: "website",
+        images: [{ url: "/og-home.jpg", width: 1200, height: 630, alt: "Gudiya Stories picture books and colouring books" }],
+      },
+    };
+  }
+  const p = await getProduct(slug);
   if (!p) return {};
+  const guide = BOOK_GUIDES[p.slug];
+  // A search title is complete on its own (Admin's preview shows it that way), so the
+  // " · Gudiya Stories" suffix is only added to a plain book title.
+  const seoTitle = p.seoTitle || guide?.seoTitle;
+  const title = seoTitle ?? p.title;
+  const description = p.seoDescription || guide?.seoDescription || p.shortDescription;
   return {
-    title: p.title,
-    description: p.shortDescription,
+    title: seoTitle ? { absolute: seoTitle } : title,
+    description,
     alternates: { canonical: `/books/${p.slug}` },
-    openGraph: { title: p.title, description: p.shortDescription, images: [{ url: p.cover.src, alt: p.cover.alt }] },
+    openGraph: {
+      title: seoTitle ?? `${title} · Gudiya Stories`,
+      description,
+      url: `/books/${p.slug}`,
+      siteName: "Gudiya Stories",
+      locale: "en_IN",
+      type: "website",
+      images: [{ url: p.cover.src, width: p.cover.width, height: p.cover.height, alt: p.cover.alt }],
+    },
   };
 }
 
 export default async function BookPage({ params }: Params) {
   const { slug } = await params;
   const { products, values } = await getCatalogue();
+  const col = COLLECTION_BY_SLUG.get(slug);
+  if (col) return <CollectionView c={col} products={products} values={values} />;
   const p = products.find((x) => x.slug === slug);
   if (!p) notFound();
   if (p.type === "BUNDLE") permanentRedirect(`/sets/${p.slug}`);
@@ -50,8 +89,9 @@ export default async function BookPage({ params }: Params) {
   const related = products
     .filter((x) => x.type !== "BUNDLE" && x.slug !== p.slug && x.values.some((v) => p.values.includes(v)))
     .slice(0, 4);
-  const reviews = await getApprovedReviews(p.id);
+  const [reviews, shipping] = await Promise.all([getApprovedReviews(p.id), getShippingRules()]);
   const isDonimalai = p.slug === "mystical-landscapes-of-donimalai";
+  const guide = BOOK_GUIDES[p.slug];
 
   const details: [string, string | null][] = [
     ["Ages", formatAges(p.ageMin, p.ageMax)],
@@ -139,8 +179,28 @@ export default async function BookPage({ params }: Params) {
             {p.longDescriptionHtml ? (
               <div className="prose-notes mt-3" dangerouslySetInnerHTML={{ __html: p.longDescriptionHtml }} />
             ) : (
-              <p className="mt-3 max-w-[60ch] text-lead">{p.shortDescription}</p>
+              <>
+                <p className="mt-3 max-w-[60ch] text-lead">{p.shortDescription}</p>
+                {guide?.about.map((para) => (
+                  <p key={para.slice(0, 24)} className="mt-4 max-w-[60ch] text-ink-soft">
+                    {para}
+                  </p>
+                ))}
+              </>
             )}
+            {guide?.readItWhen.length ? (
+              <>
+                <h3 className="mt-8 label-caps text-ink-soft">{p.type === "COLOURING" ? "Good moments for it" : "When to read it"}</h3>
+                <ul className="mt-3 space-y-1.5">
+                  {guide.readItWhen.map((w) => (
+                    <li key={w} className="flex gap-2.5">
+                      <span aria-hidden="true" className="mt-[0.6em] size-1.5 shrink-0 rounded-full bg-lime" />
+                      {w}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
             {p.goodFor.length ? (
               <>
                 <h3 className="mt-8 label-caps text-ink-soft">Good for</h3>
@@ -168,7 +228,12 @@ export default async function BookPage({ params }: Params) {
                 <Download className="size-4" strokeWidth={1.5} aria-hidden="true" /> Download the card (PDF)
               </a>
             ) : (
-              <p className="mt-3 text-small text-ink-soft">The card for this book is being written. It will appear here.</p>
+              <a
+                href={whatsappLink(`Hello! Please send me the After the story questions for ${p.title} when they're ready.`)}
+                className="mt-4 inline-flex items-center gap-2 font-medium text-leaf underline decoration-lime decoration-2 underline-offset-4"
+              >
+                Ask us for this book&apos;s questions on WhatsApp
+              </a>
             )}
           </div>
 
@@ -183,23 +248,7 @@ export default async function BookPage({ params }: Params) {
               ))}
           </dl>
 
-          {p.amazonUrl || p.flipkartUrl ? (
-            <p className="mt-6 text-small text-ink-soft">
-              Also on{" "}
-              {p.amazonUrl ? (
-                <a href={p.amazonUrl} className="text-ink underline underline-offset-4" target="_blank" rel="noopener noreferrer">
-                  Amazon
-                </a>
-              ) : null}
-              {p.amazonUrl && p.flipkartUrl ? " and " : null}
-              {p.flipkartUrl ? (
-                <a href={p.flipkartUrl} className="text-ink underline underline-offset-4" target="_blank" rel="noopener noreferrer">
-                  Flipkart
-                </a>
-              ) : null}
-              .
-            </p>
-          ) : null}
+          <AlsoOn product={p} className="mt-6" />
         </div>
       </section>
 
@@ -216,6 +265,27 @@ export default async function BookPage({ params }: Params) {
       ) : null}
 
       {IN_USE[p.slug]?.length ? <InUseStrip items={IN_USE[p.slug]!} title={p.title} heading={p.type === "STORY" ? "In readers' hands" : "See it in use"} /> : null}
+
+      {guide?.faqs.length ? (
+        <section aria-labelledby="faq-title" className="content-grid py-16">
+          <h2 id="faq-title" className="text-h3">
+            Questions parents ask
+          </h2>
+          <div className="mt-6 max-w-3xl border-t border-line">
+            {guide.faqs.map((f) => (
+              <details key={f.q} className="group border-b border-line py-4">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium [&::-webkit-details-marker]:hidden">
+                  {f.q}
+                  <span aria-hidden="true" className="text-xl leading-none text-ink-soft transition-transform duration-300 group-open:rotate-45">
+                    +
+                  </span>
+                </summary>
+                <p className="mt-3 max-w-[62ch] text-ink-soft">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {reviews.length ? (
         <section aria-labelledby="reviews-title" className="content-grid py-16">
@@ -267,7 +337,7 @@ export default async function BookPage({ params }: Params) {
                           alt=""
                           width={x.cover.width}
                           height={x.cover.height}
-                          className="h-24 w-auto rounded-[2px] shadow-[0_10px_18px_-12px_rgb(27_26_23/0.6)] transition-transform duration-500 ease-page group-hover:-translate-y-1"
+                          sizes="72px" className="h-24 w-auto rounded-[2px] shadow-[0_10px_18px_-12px_rgb(27_26_23/0.6)] transition-transform duration-500 ease-page group-hover:-translate-y-1"
                           style={{ rotate: `${(i - 1) * 5}deg` }}
                         />
                       ))}
@@ -310,10 +380,11 @@ export default async function BookPage({ params }: Params) {
           "@context": "https://schema.org",
           "@type": ["Book", "Product"],
           name: p.title,
-          description: p.shortDescription,
+          description: guide?.seoDescription ?? p.shortDescription,
           isbn: p.isbn ?? undefined,
+          ...(p.isbn ? { gtin13: p.isbn.replace(/\D/g, "") } : {}),
           sku: p.sku,
-          image: `${SITE.url}${p.cover.src}`,
+          image: [p.cover, ...p.spreads].slice(0, 4).map((i) => absUrl(i.src)),
           url: `${SITE.url}/books/${p.slug}`,
           author: { "@type": "Person", "@id": `${SITE.url}/about#bharathi`, name: SITE.author },
           illustrator: { "@type": "Person", "@id": `${SITE.url}/about#bharathi`, name: SITE.author },
@@ -354,7 +425,18 @@ export default async function BookPage({ params }: Params) {
             priceCurrency: "INR",
             price: (p.pricePaise / 100).toFixed(2),
             availability: p.available === 0 ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+            itemCondition: "https://schema.org/NewCondition",
             url: `${SITE.url}/books/${p.slug}`,
+            seller: { "@type": "Organization", "@id": `${SITE.url}/#org`, name: SITE.name },
+            shippingDetails: {
+              "@type": "OfferShippingDetails",
+              shippingDestination: { "@type": "DefinedRegion", addressCountry: "IN" },
+              shippingRate: {
+                "@type": "MonetaryAmount",
+                currency: "INR",
+                value: (shipping.freeFromPaise != null && p.pricePaise >= shipping.freeFromPaise ? 0 : shipping.flatRatePaise / 100).toFixed(2),
+              },
+            },
           },
         }}
       />
@@ -368,6 +450,20 @@ export default async function BookPage({ params }: Params) {
           ],
         }}
       />
+      {guide?.faqs.length ? (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: guide.faqs.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+          }}
+        />
+      ) : null}
     </>
   );
+}
+
+/** Uploaded images may already be full URLs (S3); files in /public are site paths. */
+function absUrl(src: string) {
+  return /^https?:\/\//.test(src) ? src : `${SITE.url}${src}`;
 }

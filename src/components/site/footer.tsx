@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { NAV, SITE } from "@/config/site";
+import { MYSTORE_SELLER_URL } from "@/content/marketplaces";
 import { DeckledDivider } from "@/components/ui/deckled-divider";
 import { InlineWordmark } from "./inline-wordmark";
 
@@ -25,6 +26,7 @@ export function SiteFooter() {
               alt="Gudiya Stories logo: a doll holding an open book, with the words Give wings to imagination"
               width={940}
               height={745}
+              sizes="224px"
               className="w-56 mix-blend-multiply"
             />
             <p className="mt-6 max-w-[42ch] text-ink-soft">
@@ -85,6 +87,11 @@ export function SiteFooter() {
                   </a>
                 </li>
               ) : null}
+              <li>
+                <a href={MYSTORE_SELLER_URL} target="_blank" rel="noopener noreferrer" className="hover:text-leaf">
+                  Our shop on Mystore
+                </a>
+              </li>
               <li className="text-ink-soft">
                 {SITE.city}, {SITE.region}
               </li>

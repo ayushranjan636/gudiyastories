@@ -87,7 +87,7 @@ export function BagDrawer() {
                       alt=""
                       width={i.product.cover.width}
                       height={i.product.cover.height}
-                      className="w-16 rounded-[2px] shadow-[0_6px_14px_-8px_rgb(27_26_23/0.5)]"
+                      sizes="64px" className="w-16 rounded-[2px] shadow-[0_6px_14px_-8px_rgb(27_26_23/0.5)]"
                     />
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col gap-1">

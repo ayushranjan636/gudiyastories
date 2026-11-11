@@ -52,7 +52,7 @@ export default async function ResourcesPage() {
                   className="group flex items-center gap-5 rounded-2xl border border-line p-5 transition-colors hover:border-ink/30 hover:bg-white/50"
                 >
                   {r.product ? (
-                    <Image src={r.product.cover.src} alt="" width={r.product.cover.width} height={r.product.cover.height} className="w-14 rounded-[2px]" />
+                    <Image src={r.product.cover.src} alt="" width={r.product.cover.width} height={r.product.cover.height} sizes="56px" className="w-14 rounded-[2px]" />
                   ) : null}
                   <span className="flex-1">
                     <span className="label-caps block text-ink-soft">{KIND_LABEL[r.kind]}</span>
@@ -74,7 +74,7 @@ export default async function ResourcesPage() {
               {stories.map((s) => (
                 <li key={s.slug}>
                   <Link href={`/books/${s.slug}`} className="inline-flex items-center gap-2 rounded-full border border-line py-1 pr-3 pl-1 text-small hover:border-ink/40">
-                    <Image src={s.cover.src} alt="" width={s.cover.width} height={s.cover.height} className="h-7 w-auto rounded-full object-cover" />
+                    <Image src={s.cover.src} alt="" width={s.cover.width} height={s.cover.height} sizes="28px" className="h-7 w-auto rounded-full object-cover" />
                     {s.title}
                   </Link>
                 </li>

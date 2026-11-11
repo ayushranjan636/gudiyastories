@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { BookCheck, Printer, Truck, Wallet } from "lucide-react";
@@ -24,6 +25,27 @@ import { getClasses, getPopupClass } from "@/features/classes/repo";
 import { ClassCard } from "@/components/site/class-card";
 import { ClassPopup } from "@/components/site/class-popup";
 import { formatClassPrice, startLabel } from "@/features/classes/format";
+
+const HOME_TITLE = "Picture Books & Colouring Books for Kids | Gudiya Stories";
+const HOME_DESCRIPTION =
+  "Value-based picture books and mindful mandala colouring books for children aged 4 to 13, written and designed by early-years teacher S.V. Bharathi in Tirupati. Delivered across India.";
+
+export const metadata: Metadata = {
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
+  alternates: { canonical: "/", types: { "text/markdown": "/llms.txt" } },
+  // A page's openGraph replaces the layout's, so every field is set here.
+  openGraph: {
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    url: "/",
+    siteName: "Gudiya Stories",
+    locale: "en_IN",
+    type: "website",
+    images: [{ url: "/og-home.jpg", width: 1200, height: 630, alt: "Gudiya Stories picture books and colouring books" }],
+  },
+  twitter: { card: "summary_large_image", title: HOME_TITLE, description: HOME_DESCRIPTION, images: ["/og-home.jpg"] },
+};
 
 // Re-checked every minute so scheduled blog posts and stock changes show up on their own.
 export const revalidate = 60;
@@ -168,7 +190,7 @@ export default async function HomePage() {
       <DeckledDivider direction="up" className="-mt-px" />
 
       {/* After the story */}
-      <section aria-labelledby="after-title" className="content-grid grid items-center gap-12 py-16 md:py-24 lg:grid-cols-12">
+      <section aria-labelledby="after-title" className="content-grid grid items-center gap-12 overflow-x-clip py-16 md:py-24 lg:grid-cols-12">
         <Reveal className="lg:col-span-6">
           <p className="label-caps text-ink-soft">After the story</p>
           <h2 id="after-title" className="mt-3 max-w-[16ch] text-h2">

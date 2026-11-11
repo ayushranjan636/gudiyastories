@@ -82,7 +82,7 @@ export default async function BlogPostPage({ params, searchParams }: Props) {
         <div className="prose-notes" dangerouslySetInnerHTML={{ __html: withVideoStills(expandBookCards(sanitizeHtml(post.contentHtml), products)) }} />
 
         <aside className="mt-14 flex items-center gap-5 rounded-2xl bg-paper-deep p-6">
-          <Image src="/authors/sv-bharathi.jpg" alt="" width={600} height={800} className="size-16 rounded-full object-cover grayscale" />
+          <Image src="/authors/sv-bharathi.jpg" alt="" width={600} height={800} sizes="64px" className="size-16 rounded-full object-cover grayscale" />
           <p className="text-small">
             <span className="font-medium">{SITE.author}</span> has taught in early-years classrooms for more than fifteen years. She writes
             and designs every Gudiya Stories book.
@@ -98,7 +98,7 @@ export default async function BlogPostPage({ params, searchParams }: Props) {
               {related.map((p) => (
                 <li key={p.slug}>
                   <Link href={p.type === "BUNDLE" ? `/sets/${p.slug}` : `/books/${p.slug}`} className="flex items-center gap-4 rounded-2xl border border-line p-4 hover:border-ink/30">
-                    <Image src={p.cover.src} alt="" width={p.cover.width} height={p.cover.height} className="w-14 rounded-[2px]" />
+                    <Image src={p.cover.src} alt="" width={p.cover.width} height={p.cover.height} sizes="56px" className="w-14 rounded-[2px]" />
                     <span>
                       <span className="block font-display">{p.title}</span>
                       <span className="text-small text-ink-soft">{formatINR(p.pricePaise)}</span>

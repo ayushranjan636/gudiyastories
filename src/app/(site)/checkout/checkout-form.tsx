@@ -268,7 +268,7 @@ export function CheckoutForm() {
             {items.map((i) => (
               <li key={i.slug} className="flex items-center gap-4">
                 <div className="relative">
-                  <Image src={i.product.cover.src} alt="" width={i.product.cover.width} height={i.product.cover.height} className="w-12 rounded-[2px]" />
+                  <Image src={i.product.cover.src} alt="" width={i.product.cover.width} height={i.product.cover.height} sizes="48px" className="w-12 rounded-[2px]" />
                   <span className="absolute -top-2 -right-2 grid size-5 place-items-center rounded-full bg-ink text-[0.7rem] text-paper">
                     {i.quantity}
                   </span>

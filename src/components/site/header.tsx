@@ -50,9 +50,10 @@ export function SiteHeader() {
           <Link href="/" className="group flex items-center gap-3" aria-label="Gudiya Stories, home">
             <Image
               src="/brand/gudiya-stories-mark.png"
-              alt=""
+              alt="Gudiya Stories logo"
               width={667}
               height={490}
+              sizes="60px"
               preload
               className="h-10 w-auto transition-transform duration-500 ease-page group-hover:-rotate-3 md:h-11"
             />

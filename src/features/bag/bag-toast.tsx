@@ -57,7 +57,7 @@ export function BagToast({
           >
             <div className="flex gap-4">
               <div className="relative shrink-0">
-                <Image src={toast.cover.src} alt="" width={toast.cover.width} height={toast.cover.height} className="h-20 w-auto rounded-[2px] shadow-[0_8px_16px_-10px_rgb(27_26_23/0.6)]" />
+                <Image src={toast.cover.src} alt="" width={toast.cover.width} height={toast.cover.height} sizes="60px" className="h-20 w-auto rounded-[2px] shadow-[0_8px_16px_-10px_rgb(27_26_23/0.6)]" />
                 <motion.span
                   initial={reduce ? false : { scale: 0 }}
                   animate={{ scale: 1 }}

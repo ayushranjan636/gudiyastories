@@ -44,7 +44,7 @@ export function ValuesExplorer({ values }: { values: V[] }) {
                 {/* covers inline on small screens */}
                 <span className="col-span-full mt-3 flex gap-2 lg:hidden" aria-hidden="true">
                   {v.covers.slice(0, 4).map((c) => (
-                    <FadeImage key={c.slug} src={c.src} alt="" width={c.w} height={c.h} className="h-16 w-auto rounded-[2px]" />
+                    <FadeImage key={c.slug} src={c.src} alt={c.alt} width={c.w} height={c.h} sizes="48px" className="h-16 w-auto rounded-[2px]" />
                   ))}
                 </span>
               </Link>
@@ -72,7 +72,7 @@ export function ValuesExplorer({ values }: { values: V[] }) {
                 >
                   <FadeImage
                     src={c.src}
-                    alt=""
+                    alt={c.alt}
                     width={c.w}
                     height={c.h}
                     sizes="192px"

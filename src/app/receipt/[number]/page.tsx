@@ -36,7 +36,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
             </span>
           ) : null}
           <header className="flex items-start gap-5">
-            <Image src="/brand/gudiya-stories-lockup.png" alt="Gudiya Stories" width={940} height={745} className="w-24" />
+            <Image src="/brand/gudiya-stories-lockup.png" alt="Gudiya Stories" width={940} height={745} sizes="96px" className="w-24" />
             <div>
               <h1 className="font-display text-h3">Receipt</h1>
               <p className="text-small text-ink-soft">

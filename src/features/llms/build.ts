@@ -2,6 +2,9 @@ import "server-only";
 import { SITE } from "@/config/site";
 import { AWARDS } from "@/content/author";
 import { COLOURED } from "@/content/gallery";
+import { COLLECTIONS } from "@/content/collections";
+import { BOOK_GUIDES } from "@/content/book-guides";
+import { MYSTORE_SELLER_URL, storeLinks } from "@/content/marketplaces";
 import { getCatalogue } from "@/features/catalogue/repo";
 import type { CatalogueProduct } from "@/features/catalogue/types";
 import { getPublishedPosts } from "@/features/blog/repo";
@@ -49,6 +52,8 @@ function productLine(p: CatalogueProduct, base: string, valueName: Map<string, s
     formatINR(p.pricePaise) + (p.mrpPaise > p.pricePaise ? ` (MRP ${formatINR(p.mrpPaise)})` : ""),
     p.values.length ? `values: ${p.values.map((v) => valueName.get(v) ?? v).join(", ")}` : null,
   ].filter(Boolean);
+  const elsewhere = storeLinks(p).map((l) => l.name);
+  if (elsewhere.length) facts.push(`also on ${elsewhere.join(", ")}`);
   return `- [${p.title}](${base}${path}): ${oneLine(p.shortDescription)} (${facts.join("; ")})`;
 }
 
@@ -104,6 +109,7 @@ export async function buildLlmsTxt({ full }: { full: boolean }): Promise<string>
     `- [Readers' gallery](${base}/gallery): ${COLOURED.length + 1} mandala pages coloured by children, and videos of the books at home`,
     `- [About](${base}/about): ${SITE.author}, how a book is made, and recognition for her teaching`,
     `- [Blog](${base}/blog): notes on reading with children, colouring and classroom ideas`,
+    ...COLLECTIONS.map((c) => `- [${c.h1}](${base}/books/${c.slug}): ${c.description}`),
   );
 
   if (posts.length) {
@@ -116,6 +122,7 @@ export async function buildLlmsTxt({ full }: { full: boolean }): Promise<string>
     `- Email: ${SITE.email}`,
     `- WhatsApp / phone: ${SITE.phoneDisplay}`,
     `- Instagram: ${SITE.instagram}`,
+    `- Also sold on Mystore (ONDC): ${MYSTORE_SELLER_URL}, and some titles on Flipkart`,
     `- Based in ${SITE.city}, ${SITE.region}, ${SITE.country}. Prices are in Indian rupees.`,
   );
 
@@ -149,10 +156,16 @@ export async function buildLlmsTxt({ full }: { full: boolean }): Promise<string>
       ["Binding", p.binding],
       ["ISBN", p.isbn],
       ["Published", p.publishedOn],
-      ["Also on", [p.amazonUrl && "Amazon", p.flipkartUrl && "Flipkart"].filter(Boolean).join(", ")],
+      ["Also on", storeLinks(p).map((l) => `${l.name} (${l.url})`).join(", ")],
     ].filter((r): r is [string, string] => Boolean(r[1]));
     out.push(...spec.map(([k, v]) => `- ${k}: ${v}`), "", oneLine(p.shortDescription));
+    const guide = BOOK_GUIDES[p.slug];
     if (p.longDescriptionHtml) out.push("", htmlToText(p.longDescriptionHtml));
+    else if (guide) out.push("", ...guide.about.flatMap((para) => [para, ""]));
+    if (guide) {
+      out.push("Good moments to read it: " + guide.readItWhen.join("; ") + ".", "");
+      out.push(...guide.faqs.flatMap((f) => [`Q: ${f.q}`, `A: ${f.a}`]));
+    }
     if (p.type === "BUNDLE") {
       const inside = p.components.map((c) => `${c.quantity > 1 ? `${c.quantity} × ` : ""}${bySlug.get(c.slug)?.title ?? c.slug}`);
       if (inside.length) out.push("", `Contains: ${inside.join(", ")}.`);

@@ -66,6 +66,13 @@
 }
 
 @layer base {
+  /* Desktop: the scrollbar's space is always kept, so locking scroll (welcome scene,
+     dialogs) never shifts the page sideways. Phones use overlay scrollbars, so not there. */
+  @media (pointer: fine) {
+    html {
+      scrollbar-gutter: stable;
+    }
+  }
   html {
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;

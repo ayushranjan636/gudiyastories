@@ -20,7 +20,7 @@ const hankenGrotesk = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://gudiyastories.com"),
   title: {
     default: "Gudiya Stories",
     template: "%s · Gudiya Stories",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     "Value-based picture books and mindful colouring books, written and designed by early-years teacher S.V. Bharathi in Tirupati.",
   applicationName: "Gudiya Stories",
   authors: [{ name: "S.V. Bharathi" }],
-  openGraph: { siteName: "Gudiya Stories", locale: "en_IN", type: "website" },
+  openGraph: { siteName: "Gudiya Stories", locale: "en_IN", type: "website", images: [{ url: "/og-home.jpg", width: 1200, height: 630, alt: "Gudiya Stories picture books and colouring books" }] },
   twitter: { card: "summary_large_image" },
   alternates: { types: { "text/markdown": "/llms.txt" } },
 };

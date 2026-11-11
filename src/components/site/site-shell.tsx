@@ -11,6 +11,7 @@ import { NavigationProgress } from "@/components/motion/navigation-progress";
 import { Suspense } from "react";
 import { JsonLd } from "@/components/site/json-ld";
 import { SITE } from "@/config/site";
+import { MYSTORE_SELLER_URL } from "@/content/marketplaces";
 import { getShippingRules } from "@/server/settings";
 
 /** Header, footer, bag and analytics around every public page. */
@@ -47,7 +48,7 @@ export async function SiteShell({ children }: { children: React.ReactNode }) {
               founder: { "@type": "Person", "@id": `${SITE.url}/about#bharathi`, name: SITE.author },
               knowsAbout: ["Children's picture books", "Value-based education", "Early childhood education", "Mandala colouring for children", "Reading aloud"],
               contactPoint: { "@type": "ContactPoint", contactType: "customer service", email: SITE.email, telephone: SITE.phoneE164 },
-              sameAs: [SITE.instagram],
+              sameAs: [SITE.instagram, MYSTORE_SELLER_URL],
             },
             {
               "@type": "WebSite",

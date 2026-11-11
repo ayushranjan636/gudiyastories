@@ -32,7 +32,7 @@ export function ProductCard({ p, priority }: { p: CardProduct; priority?: boolea
               <FadeImage
                 key={c.src}
                 src={c.src}
-                alt=""
+                alt={c.alt ?? ""}
                 width={c.width}
                 height={c.height}
                 sizes="200px"
@@ -48,7 +48,7 @@ export function ProductCard({ p, priority }: { p: CardProduct; priority?: boolea
           <div id={coverId} className="mx-auto w-[72%]">
             <Book3D
               src={p.cover.src}
-              alt=""
+              alt={`Cover of ${p.title}`}
               width={p.cover.width}
               height={p.cover.height}
               spineColor={p.spineColor}
