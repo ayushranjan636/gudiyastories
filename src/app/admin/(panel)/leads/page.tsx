@@ -4,7 +4,7 @@ import { requireAdmin } from "@/server/admin";
 import { Badge, Empty, PageHeader, Tabs } from "@/components/admin/ui";
 import { formatINR } from "@/lib/money";
 import { LeadControls } from "./lead-controls";
-import { daysAgo } from "@/features/orders/leads";
+import { daysAgo, UNPAID_LEAD } from "@/features/orders/leads";
 
 export const metadata = { title: "Leads" };
 
@@ -32,8 +32,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
 
   const attempts = await db.order.findMany({
     where: {
-      status: { in: ["PENDING_PAYMENT", "EXPIRED"] },
-      channel: "WEBSITE",
+      ...UNPAID_LEAD,
       createdAt: { gte: since },
       ...(q ? { OR: [{ contactName: { contains: q, mode: "insensitive" } }, { contactPhone: { contains: q.replace(/\D/g, "") || q } }, { contactEmail: { contains: q, mode: "insensitive" } }, { number: { contains: q, mode: "insensitive" } }] } : {}),
     },
@@ -71,7 +70,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     <div className="space-y-6">
       <PageHeader
         title="Leads"
-        description="People who filled in checkout and pressed Pay but didn't finish paying, in the last 90 days. Call or message them to help them complete the order."
+        description="Everyone who started an order but didn't pay (payment pending, failed, expired or cancelled), in the last 90 days. Call or message them to help them complete it. Paid orders are under Orders."
       />
       <Tabs active={`/admin/leads?tab=${tab}`} items={TABS.map((t) => ({ href: `/admin/leads?tab=${t}`, label: LABEL[t]!, count: count(t) }))} />
       <form className="flex max-w-md gap-2">
@@ -95,6 +94,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                     <p className="text-small text-ink-soft">
                       {l.shipCity}, {l.shipState} · {when(l.createdAt)}
                       {l.tries > 1 ? ` · tried ${l.tries} times` : ""}
+                      {l.channel !== "WEBSITE" ? ` · ${l.channel.toLowerCase()} order` : ""}
                     </p>
                   </div>
                   <Badge tone={TONE[l.leadState] ?? "neutral"}>{l.paidLater ? "Ordered later" : LABEL[l.leadState]}</Badge>

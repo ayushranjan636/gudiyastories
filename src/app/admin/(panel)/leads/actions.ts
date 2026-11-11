@@ -16,11 +16,11 @@ export async function updateLead(input: z.input<typeof schema>) {
   const admin = await requireAdmin();
   const d = schema.safeParse(input);
   if (!d.success) return { ok: false, message: "Check the note." };
-  const o = await db.order.findUnique({ where: { id: d.data.orderId }, select: { status: true, contactPhone: true } });
-  if (!o || !["PENDING_PAYMENT", "EXPIRED"].includes(o.status)) return { ok: false, message: "That checkout is no longer an open lead." };
+  const o = await db.order.findUnique({ where: { id: d.data.orderId }, select: { paidAt: true, contactPhone: true } });
+  if (!o || o.paidAt) return { ok: false, message: "That checkout is no longer an open lead." };
   // The same person's earlier unpaid attempts get the same status (one lead per person).
   await db.order.updateMany({
-    where: { contactPhone: o.contactPhone, status: { in: ["PENDING_PAYMENT", "EXPIRED"] }, id: { not: d.data.orderId } },
+    where: { contactPhone: o.contactPhone, paidAt: null, id: { not: d.data.orderId } },
     data: { leadStatus: d.data.status, leadUpdatedAt: new Date() },
   });
   await db.order.update({

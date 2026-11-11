@@ -6,19 +6,18 @@ import { STATUS_LABEL } from "@/features/orders/public";
 import { formatINR } from "@/lib/money";
 import { formatDate } from "@/lib/format";
 import type { Prisma } from "@/generated/prisma/client";
+import { CONFIRMED } from "@/features/orders/leads";
 
 export const metadata = { title: "Orders" };
 
-// "All orders" = real orders only. Website checkouts that were never paid are not
-// orders: they live under "Unpaid attempts" and never reach the packing list.
-const TABS = ["all", "PAID", "PACKED", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED", "unpaid"] as const;
-const UNPAID = ["PENDING_PAYMENT", "EXPIRED"] as const;
-const TAB_LABEL: Record<string, string> = { all: "All orders", unpaid: "Unpaid attempts" };
+// Confirmed (paid) orders only. Checkouts that were never paid are not orders:
+// they are under Admin → Leads and never reach the packing list.
+const TABS = ["all", "PAID", "PACKED", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"] as const;
+const TAB_LABEL: Record<string, string> = { all: "All orders" };
 
 function statusWhere(tab: string): Prisma.OrderWhereInput {
-  if (tab === "unpaid") return { status: { in: [...UNPAID] } };
-  if (tab === "all") return { status: { notIn: [...UNPAID] } };
-  return { status: tab as Prisma.OrderWhereInput["status"] };
+  if (tab === "all") return CONFIRMED;
+  return { ...CONFIRMED, status: tab as Prisma.OrderWhereInput["status"] };
 }
 
 export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ status?: string; q?: string; channel?: string }> }) {
@@ -45,17 +44,24 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
   };
   const [orders, counts] = await Promise.all([
     db.order.findMany({ where, orderBy: { createdAt: "desc" }, take: 100, include: { _count: { select: { items: true } } } }),
-    db.order.groupBy({ by: ["status"], _count: { _all: true } }),
+    db.order.groupBy({ by: ["status"], where: CONFIRMED, _count: { _all: true } }),
   ]);
-  const isUnpaid = (st: string) => (UNPAID as readonly string[]).includes(st);
   const sum = (pred: (st: string) => boolean) => counts.filter((c) => pred(c.status)).reduce((n, c) => n + c._count._all, 0);
-  const count = (t: string) => (t === "all" ? sum((st) => !isUnpaid(st)) : t === "unpaid" ? sum(isUnpaid) : sum((st) => st === t));
+  const count = (t: string) => (t === "all" ? sum(() => true) : sum((st) => st === t));
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Orders"
-        description="Website, WhatsApp, marketplace and bulk orders in one list."
+        description={
+          <>
+            Confirmed (paid) orders only. Checkouts that weren&apos;t paid are in{" "}
+            <Link href="/admin/leads" className="text-leaf underline underline-offset-2">
+              Leads
+            </Link>
+            .
+          </>
+        }
         actions={
           <>
             <a href={`/admin/export/orders?status=${status}`} className={btn.secondary}>
@@ -116,7 +122,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
           </tbody>
         </Table>
       ) : (
-        <Empty>{status === "unpaid" ? "No unpaid checkout attempts." : "No orders here yet. Website orders appear here only after the payment goes through."}</Empty>
+        <Empty>No orders here yet. An order appears here only after its payment goes through.</Empty>
       )}
     </div>
   );

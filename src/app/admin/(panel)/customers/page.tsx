@@ -5,6 +5,7 @@ import { Badge, btn, Empty, inputCls, PageHeader, Table } from "@/components/adm
 import { formatINR } from "@/lib/money";
 import { formatDate } from "@/lib/format";
 import { PAID_STATUSES } from "@/server/reports";
+import { CONFIRMED } from "@/features/orders/leads";
 
 export const metadata = { title: "Customers" };
 
@@ -14,12 +15,12 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const customers = await db.customer.findMany({
     // Only people with at least one real (paid) order. Abandoned checkouts aren't customers.
     where: {
-      orders: { some: { status: { in: [...PAID_STATUSES, "CANCELLED", "RETURNED", "REFUNDED"] } } },
+      orders: { some: CONFIRMED },
       ...(q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { phone: { contains: q } }, { email: { contains: q, mode: "insensitive" } }] } : {}),
     },
     orderBy: { createdAt: "desc" },
     take: 200,
-    include: { orders: { where: { status: { in: [...PAID_STATUSES] } }, select: { totalPaise: true, createdAt: true } } },
+    include: { orders: { where: { ...CONFIRMED, status: { in: [...PAID_STATUSES] } }, select: { totalPaise: true, createdAt: true } } },
   });
   const rows = customers
     .map((c) => ({ ...c, spent: c.orders.reduce((n, o) => n + o.totalPaise, 0), last: c.orders.reduce<Date | null>((d, o) => (!d || o.createdAt > d ? o.createdAt : d), null) }))

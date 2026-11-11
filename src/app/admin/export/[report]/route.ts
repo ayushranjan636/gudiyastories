@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { CONFIRMED } from "@/features/orders/leads";
 import { db } from "@/server/db";
 import { csvResponse } from "@/server/csv";
 import { parseRange, stockLevels, trafficReports } from "@/server/reports";
@@ -21,11 +22,9 @@ export async function GET(req: Request, ctx: { params: Promise<{ report: string 
     const orders = await db.order.findMany({
       // Same rules as the order list: unpaid checkout attempts are not orders.
       where:
-        status === "unpaid"
-          ? { status: { in: ["PENDING_PAYMENT", "EXPIRED"] } }
-          : status && ["PAID", "PACKED", "SHIPPED", "DELIVERED", "CANCELLED", "RETURNED", "REFUNDED"].includes(status)
-            ? { status: status as "PAID" }
-            : { status: { notIn: ["PENDING_PAYMENT", "EXPIRED"] } },
+        status && ["PAID", "PACKED", "SHIPPED", "DELIVERED", "CANCELLED", "RETURNED", "REFUNDED"].includes(status)
+          ? { ...CONFIRMED, status: status as "PAID" }
+          : CONFIRMED,
       orderBy: { createdAt: "desc" },
       include: { items: true },
       take: 5000,
@@ -58,8 +57,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ report: string 
   if (report === "customers") {
     if (role !== "OWNER" && admin.role !== "OWNER") return new Response("Owner only", { status: 403 });
     const customers = await db.customer.findMany({
-      where: { orders: { some: { status: { notIn: ["PENDING_PAYMENT", "EXPIRED"] } } } },
-      include: { orders: { where: { status: { notIn: ["PENDING_PAYMENT", "EXPIRED"] } }, select: { totalPaise: true, status: true } } },
+      where: { orders: { some: CONFIRMED } },
+      include: { orders: { where: CONFIRMED, select: { totalPaise: true, status: true } } },
       take: 10000,
     });
     return csvResponse(

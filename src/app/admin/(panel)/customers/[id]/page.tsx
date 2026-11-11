@@ -4,13 +4,14 @@ import { db } from "@/server/db";
 import { requireAdmin } from "@/server/admin";
 import { Badge, Card, ORDER_TONE, Table } from "@/components/admin/ui";
 import { STATUS_LABEL } from "@/features/orders/public";
+import { CONFIRMED } from "@/features/orders/leads";
 import { formatINR } from "@/lib/money";
 import { formatDate } from "@/lib/format";
 
 export default async function CustomerDetail({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
   const { id } = await params;
-  const c = await db.customer.findUnique({ where: { id }, include: { orders: { orderBy: { createdAt: "desc" } }, addresses: true } });
+  const c = await db.customer.findUnique({ where: { id }, include: { orders: { where: CONFIRMED, orderBy: { createdAt: "desc" } }, addresses: true } });
   if (!c) notFound();
   return (
     <div className="space-y-6">
