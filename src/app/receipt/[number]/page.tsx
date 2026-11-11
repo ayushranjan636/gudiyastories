@@ -26,7 +26,10 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
   return (
     <main className="min-h-dvh bg-paper-deep/50 px-4 py-10 print:bg-white print:p-0">
       <div className="mx-auto max-w-[190mm]">
-        <div className="mb-4 flex justify-end print:hidden">
+        <div className="mb-4 flex justify-end gap-3 print:hidden">
+          <a href={`/receipt/${o.number}/invoice?t=${encodeURIComponent(t ?? "")}`} className="rounded-full border border-ink/20 px-5 py-2 text-small font-medium">
+            Download invoice (PDF)
+          </a>
           <PrintButton />
         </div>
         <article className="relative overflow-hidden rounded-2xl bg-white p-8 shadow-[0_30px_60px_-40px_rgb(27_26_23/0.5)] print:rounded-none print:shadow-none sm:p-12">

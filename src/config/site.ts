@@ -10,6 +10,8 @@ export const SITE = {
   whatsapp: "916301279758",
   city: "Tirupati",
   region: "Andhra Pradesh",
+  /** Registered business address (invoices, Terms page). */
+  address: "Flat No. 106, Garuda Tower, Lakshmipuram, Tirupati (Urban), Andhra Pradesh 517501",
   country: "India",
   author: "S.V. Bharathi",
   instagram: "https://www.instagram.com/gudiyastories/",

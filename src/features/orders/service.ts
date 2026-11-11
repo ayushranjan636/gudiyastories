@@ -185,7 +185,8 @@ ${rows.map(([a, b]) => `<tr><td style="padding:6px 0;border-bottom:1px solid #F2
 <tr><td style="padding:10px 0 0;font-weight:bold">Total</td><td align="right" style="padding:10px 0 0;font-weight:bold;font-size:18px">${formatINR(o.totalPaise)}</td></tr>
 </table><p style="margin:12px 0 0;font-size:13px;color:#2F6B2A">${esc(payLine)}</p></td></tr>
 <tr><td style="padding:0 28px 8px;font-size:13px;color:#5A5650">Shipping to ${esc(address)}</td></tr>
-<tr><td style="padding:16px 28px 28px"><a href="${links.receipt}" style="display:inline-block;background:#2F6B2A;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-size:14px">View or print your receipt</a>
+<tr><td style="padding:8px 28px 0;font-size:13px;color:#5A5650">Your invoice is attached to this email as a PDF.</td></tr>
+<tr><td style="padding:16px 28px 28px"><a href="${links.receipt}" style="display:inline-block;background:#2F6B2A;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-size:14px">View your receipt</a>
 <a href="${links.page}" style="display:inline-block;margin-left:8px;color:#2F6B2A;font-size:14px">Order status</a></td></tr>
 </table><p style="font-size:12px;color:#5A5650;margin:16px 0 0">Gudiya Stories · Tirupati, Andhra Pradesh · ${SITE.phoneDisplay}</p>
 </td></tr></table></body></html>`;
@@ -193,7 +194,16 @@ ${rows.map(([a, b]) => `<tr><td style="padding:6px 0;border-bottom:1px solid #F2
   const firstTime = !o.customerEmailedAt && !o.ownerEmailedAt;
 
   if (!o.customerEmailedAt && o.contactEmail) {
-    const r = await sendEmail({ to: o.contactEmail, subject: `Order ${o.number} confirmed`, text, html });
+    // The invoice goes along as a PDF. If it can't be made, the email still goes.
+    const { invoicePdf } = await import("./invoice-pdf");
+    const pdf = await invoicePdf(o.number).catch((err) => (console.error("[invoice]", o.number, err), null));
+    const r = await sendEmail({
+      to: o.contactEmail,
+      subject: `Order ${o.number} confirmed`,
+      text: pdf ? `${text}\n\nYour invoice is attached (PDF).` : text,
+      html,
+      attachments: pdf ? [{ filename: pdf.filename, content: pdf.bytes, contentType: "application/pdf" }] : undefined,
+    });
     if (r.sent) await db.order.update({ where: { id: o.id }, data: { customerEmailedAt: new Date() } });
   }
 
