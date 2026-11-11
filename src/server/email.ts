@@ -3,17 +3,36 @@ import { SITE } from "@/config/site";
 
 export type Attachment = { filename: string; content: Uint8Array; contentType?: string };
 
-/** Sends a transactional email through Resend. No-op when Resend is not configured. */
+/**
+ * Sends a transactional email.
+ *   EMAIL_PROVIDER="ses"     Amazon SES (the live server: its IAM role sends, no keys needed)
+ *   EMAIL_PROVIDER="resend"  Resend (needs RESEND_API_KEY)
+ *   unset                    SES if EMAIL_FROM is set and no Resend key; otherwise off.
+ * No-op (returns sent: false) when email isn't set up.
+ */
+export function emailProvider(): "ses" | "resend" | null {
+  const p = process.env.EMAIL_PROVIDER?.trim().toLowerCase();
+  if (!process.env.EMAIL_FROM) return null;
+  if (p === "ses") return "ses";
+  if (p === "resend") return process.env.RESEND_API_KEY ? "resend" : null;
+  return process.env.RESEND_API_KEY ? "resend" : null;
+}
+
 export async function sendEmail({ to, subject, text, html, attachments }: { to: string; subject: string; text: string; html?: string; attachments?: Attachment[] }) {
-  const key = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
-  if (!key || !from || !to) return { sent: false as const };
+  const provider = emailProvider();
+  if (!provider || !from || !to) return { sent: false as const };
+  // Customer replies go to the shop inbox (Zoho), not to the sending address.
+  const replyTo = process.env.EMAIL_REPLY_TO?.trim() || SITE.email;
   try {
+    if (provider === "ses") {
+      const { sesSend } = await import("./email-ses");
+      const r = await sesSend({ from, to, replyTo, subject, text, html, attachments });
+      if (!r.sent) console.error("[email] SES refused:", subject, "→", to, r.error);
+      return { sent: r.sent };
+    }
     const { Resend } = await import("resend");
-    const resend = new Resend(key);
-    // Customer replies go to the shop inbox (Zoho), not to the sending address.
-    const replyTo = process.env.EMAIL_REPLY_TO?.trim() || SITE.email;
-    const res = await resend.emails.send({
+    const res = await new Resend(process.env.RESEND_API_KEY).emails.send({
       from,
       to,
       subject,
@@ -31,7 +50,7 @@ export async function sendEmail({ to, subject, text, html, attachments }: { to: 
 }
 
 export function hasEmail() {
-  return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
+  return emailProvider() !== null;
 }
 
 /** Where new-order notices go: OWNER_NOTIFICATION_EMAIL, or the shop's public email. */

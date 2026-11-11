@@ -13,7 +13,7 @@ import type { StorageDriver } from "./storage";
  * so on AWS you can attach a role and leave the keys out entirely.
  */
 
-type Creds = { accessKeyId: string; secretAccessKey: string; sessionToken?: string; expires?: number };
+export type Creds = { accessKeyId: string; secretAccessKey: string; sessionToken?: string; expires?: number };
 
 const sha256 = (data: string | Buffer) => createHash("sha256").update(data).digest("hex");
 const hmac = (key: string | Buffer, data: string) => createHmac("sha256", key).update(data).digest();
@@ -57,7 +57,7 @@ export function signV4(input: {
 
 let cached: Creds | null = null;
 
-async function credentials(): Promise<Creds> {
+export async function awsCredentials(): Promise<Creds> {
   const env = process.env;
   if (env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY) {
     return { accessKeyId: env.AWS_ACCESS_KEY_ID, secretAccessKey: env.AWS_SECRET_ACCESS_KEY, sessionToken: env.AWS_SESSION_TOKEN || undefined };
@@ -116,7 +116,7 @@ export function s3Driver(): StorageDriver {
   return {
     name: "s3",
     async put(key, body, contentType) {
-      const creds = await credentials();
+      const creds = await awsCredentials();
       const path = `${cfg.prefix}/${encodeKey(key)}`;
       const amzDate = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
       const payloadHash = sha256(body);
@@ -153,7 +153,7 @@ const rfc3986 = (s: string) => encodeURIComponent(s).replace(/[!'()*]/g, (c) => 
  */
 export async function presignPut(key: string, contentType: string, expiresSeconds = 900) {
   const cfg = s3Config();
-  const creds = await credentials();
+  const creds = await awsCredentials();
   const amzDate = amzNow();
   const path = `${cfg.prefix}/${encodeKey(key)}`;
   const headers = { "cache-control": CACHE_CONTROL, "content-type": contentType };
@@ -176,7 +176,7 @@ export async function presignPut(key: string, contentType: string, expiresSecond
 /** A signed request to the bucket from the server (HEAD, ranged GET, DELETE). */
 async function s3Fetch(method: "HEAD" | "GET" | "DELETE", key: string, extra: Record<string, string> = {}) {
   const cfg = s3Config();
-  const creds = await credentials();
+  const creds = await awsCredentials();
   const amzDate = amzNow();
   const path = `${cfg.prefix}/${encodeKey(key)}`;
   const payloadHash = sha256("");

@@ -16,7 +16,7 @@ if (env.SEED_DEMO_STOCK === "true") errors.push('SEED_DEMO_STOCK must be "false"
 if (!env.UPLOAD_DIR) errors.push('UPLOAD_DIR must be "/srv/gudiya/shared/uploads" so uploads survive deploys.');
 if (env.ADMIN_PASSWORD && env.ADMIN_PASSWORD.length < 12) errors.push("ADMIN_PASSWORD must be at least 12 characters.");
 if (!env.ADMIN_EMAIL || !env.ADMIN_PASSWORD) warnings.push("ADMIN_EMAIL / ADMIN_PASSWORD are empty. They're needed on the first deploy to create the owner login.");
-if (!env.RESEND_API_KEY || !env.EMAIL_FROM) warnings.push("RESEND_API_KEY / EMAIL_FROM are empty: no order emails will be sent.");
+if (!env.EMAIL_FROM || (env.EMAIL_PROVIDER !== "ses" && !env.RESEND_API_KEY)) warnings.push('Order emails are off: set EMAIL_PROVIDER="ses" and EMAIL_FROM.');
 if (!env.OWNER_NOTIFICATION_EMAIL) warnings.push("OWNER_NOTIFICATION_EMAIL is empty: new-order emails go to the shop's public address.");
 if (env.RAZORPAY_KEY_ID?.startsWith("rzp_test_")) warnings.push("RAZORPAY_KEY_ID is a test key; the live site ignores it.");
 
