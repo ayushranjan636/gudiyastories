@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { COLOURED, HOME_VIDEOS, READER_CLIPS } from "@/content/gallery";
+import { HOME_COLOURED, HOME_VIDEOS, READER_CLIPS } from "@/content/gallery";
 import { LazyVideo } from "@/components/ui/lazy-video";
 import { Lightbox } from "@/components/ui/lightbox";
 import { Reveal } from "@/components/motion/reveal";
@@ -67,9 +67,14 @@ export function ReadersReel({ books }: { books: { slug: string; title: string }[
 export function ColouredByReaders() {
   return (
     <div className="content-grid relative pb-24 md:pb-32">
-      <h3 className="label-caps text-ink-soft">More from readers&apos; walls</h3>
+      <div className="flex items-baseline justify-between gap-4">
+        <h3 className="label-caps text-ink-soft">More from readers&apos; walls</h3>
+        <Link href="/gallery" className="text-small font-medium underline decoration-line underline-offset-4 hover:text-leaf">
+          See the whole gallery
+        </Link>
+      </div>
       <ul className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-6">
-        {COLOURED.map((c, i) => (
+        {HOME_COLOURED.map((c, i) => (
           <Reveal as="li" key={c.src} delay={Math.min(i, 5) * 0.05}>
             <figure className={cn("bg-white p-2 pb-3 shadow-[0_18px_30px_-22px_rgb(27_26_23/0.5)] transition-transform duration-500 ease-page hover:-translate-y-1 hover:rotate-0", TILT[(i + 2) % TILT.length])}>
               <Lightbox src={c.src} width={c.width} height={c.height} alt={c.alt} caption={`Coloured by a reader: ${c.caption.toLowerCase()}.`} label={`Enlarge: ${c.caption}`}>

@@ -5,6 +5,8 @@ import { Reveal } from "@/components/motion/reveal";
 import { ButtonLink } from "@/components/ui/button";
 import { AWARDS } from "@/content/author";
 import { RecognitionPhotos } from "@/components/site/recognition-photos";
+import { JsonLd } from "@/components/site/json-ld";
+import { SITE } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "About",
@@ -21,6 +23,26 @@ const STEPS = [
 export default function AboutPage() {
   return (
     <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "AboutPage",
+          url: `${SITE.url}/about`,
+          about: { "@id": `${SITE.url}/#org` },
+          mainEntity: {
+            "@type": "Person",
+            "@id": `${SITE.url}/about#bharathi`,
+            name: SITE.author,
+            jobTitle: "Early-years teacher, author and designer",
+            image: `${SITE.url}/authors/sv-bharathi.jpg`,
+            description: `Early-years teacher in ${SITE.city} with more than fifteen years in the classroom and a background in the IB curriculum. She writes and designs every Gudiya Stories book.`,
+            homeLocation: { "@type": "Place", name: `${SITE.city}, ${SITE.region}, India` },
+            knowsAbout: ["Early childhood education", "IB curriculum", "Children's picture books", "Value-based education"],
+            award: AWARDS.map((w) => [w.year, w.title, w.by].filter(Boolean).join(", ")),
+            worksFor: { "@id": `${SITE.url}/#org` },
+          },
+        }}
+      />
       <section className="content-grid grid gap-12 pt-10 pb-16 md:pt-16 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <p className="label-caps text-ink-soft">About Gudiya Stories</p>

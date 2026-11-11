@@ -8,8 +8,8 @@
 //   3. Adds any blog post shipped with the code that isn't in the database yet.
 //
 // It never resets a password or overwrites anything edited in Admin.
-// Uses DIRECT_URL (Supabase "Session pooler", port 5432) because migrations
-// need a normal session; the site itself uses DATABASE_URL (port 6543).
+// Uses DIRECT_URL if set (with a connection pooler such as Supabase's, migrations
+// need a direct session), otherwise DATABASE_URL.
 
 import { ensureSchemaAndSeed, readEnv, say, warn } from "./lib-local.mjs";
 

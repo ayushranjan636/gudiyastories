@@ -10,5 +10,5 @@ export default defineConfig([
       "@typescript-eslint/no-explicit-any": "error",
     },
   },
-  globalIgnores([".next/**", "node_modules/**", "src/generated/**", "next-env.d.ts", "assets-inbox/**"]),
+  globalIgnores([".next/**", ".next-deploy/**", "node_modules/**", "src/generated/**", "next-env.d.ts", "assets-inbox/**"]),
 ]);

@@ -31,15 +31,33 @@ export async function SiteShell({ children }: { children: React.ReactNode }) {
       <JsonLd
         data={{
           "@context": "https://schema.org",
-          "@type": "Organization",
-          name: SITE.name,
-          url: SITE.url,
-          logo: `${SITE.url}/brand/gudiya-stories-lockup.png`,
-          email: SITE.email,
-          telephone: SITE.phoneE164,
-          address: { "@type": "PostalAddress", addressLocality: SITE.city, addressRegion: SITE.region, addressCountry: "IN" },
-          founder: { "@type": "Person", name: SITE.author },
-          sameAs: [SITE.instagram],
+          "@graph": [
+            {
+              "@type": ["Organization", "OnlineStore"],
+              "@id": `${SITE.url}/#org`,
+              name: SITE.name,
+              slogan: SITE.tagline,
+              description: `Independent children's publisher in ${SITE.city}, India: value-based picture books for ages 4 to 13 and mindful mandala colouring books, written and designed by ${SITE.author}.`,
+              url: SITE.url,
+              logo: `${SITE.url}/brand/gudiya-stories-lockup.png`,
+              email: SITE.email,
+              telephone: SITE.phoneE164,
+              address: { "@type": "PostalAddress", addressLocality: SITE.city, addressRegion: SITE.region, addressCountry: "IN" },
+              areaServed: { "@type": "Country", name: "India" },
+              founder: { "@type": "Person", "@id": `${SITE.url}/about#bharathi`, name: SITE.author },
+              knowsAbout: ["Children's picture books", "Value-based education", "Early childhood education", "Mandala colouring for children", "Reading aloud"],
+              contactPoint: { "@type": "ContactPoint", contactType: "customer service", email: SITE.email, telephone: SITE.phoneE164 },
+              sameAs: [SITE.instagram],
+            },
+            {
+              "@type": "WebSite",
+              "@id": `${SITE.url}/#website`,
+              url: SITE.url,
+              name: SITE.name,
+              inLanguage: "en-IN",
+              publisher: { "@id": `${SITE.url}/#org` },
+            },
+          ],
         }}
       />
     </BagProvider>

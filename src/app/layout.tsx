@@ -27,6 +27,11 @@ export const metadata: Metadata = {
   },
   description:
     "Value-based picture books and mindful colouring books, written and designed by early-years teacher S.V. Bharathi in Tirupati.",
+  applicationName: "Gudiya Stories",
+  authors: [{ name: "S.V. Bharathi" }],
+  openGraph: { siteName: "Gudiya Stories", locale: "en_IN", type: "website" },
+  twitter: { card: "summary_large_image" },
+  alternates: { types: { "text/markdown": "/llms.txt" } },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -39,3 +39,6 @@ npm-debug.log*
 
 # raw client source assets (not used by the site)
 /public/Deepesh sir/
+
+# Deploy build (GitHub Actions)
+/.next-deploy/

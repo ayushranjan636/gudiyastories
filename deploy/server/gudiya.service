@@ -1,0 +1,44 @@
+[Unit]
+Description=Gudiya Stories website and admin (Next.js)
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=gudiya
+Group=gudiya
+WorkingDirectory=/srv/gudiya/current
+Environment=NODE_ENV=production
+Environment=NEXT_TELEMETRY_DISABLED=1
+# The build made by GitHub Actions lives in .next-deploy.
+Environment=NEXT_DIST_DIR=.next-deploy
+# Keep Node's memory in check so PostgreSQL always has room (2 GB server).
+Environment=NODE_OPTIONS=--max-old-space-size=768
+# Next.js reads /srv/gudiya/current/.env (a link to /srv/gudiya/shared/.env).
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=30
+LimitNOFILE=65535
+
+# Sandbox: no privileges, no access to other users' files, write only to its own folder.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+ReadWritePaths=/srv/gudiya
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

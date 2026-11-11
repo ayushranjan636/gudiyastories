@@ -106,13 +106,23 @@ Payments are confirmed four ways, and every way checks the payment with Razorpay
 - the webhook;
 - a scheduled check every 5 minutes (`netlify/functions/payments-sweep.mjs`), for customers who closed the tab.
 
-## 6. Your domain
+## 6. Your domain (DNS on Cloudflare)
 
-Netlify → **Domain management** → **Add a domain** → `gudiyastories.com`, then follow the DNS steps. HTTPS is set up for you. Afterwards:
+`gudiyastories.com` is managed on **Cloudflare**. Email (`svbharathi@gudiyastories.com`) runs on **Zoho**: leave its **MX** and **TXT** records alone.
 
-- set `NEXT_PUBLIC_SITE_URL` and `AUTH_URL` to `https://gudiyastories.com` and redeploy;
-- add the domain to the R2 CORS rule;
-- set the Razorpay webhook to the new address.
+1. Netlify → your site → **Domain management** → **Add a domain** → `gudiyastories.com`. Also add `www.gudiyastories.com`. Netlify shows the address to point them at, for example `gudiya-stories.netlify.app`.
+2. In Cloudflare → DNS → Records, **delete** every A, AAAA and CNAME record for `@` and `www`: the old GoDaddy ones (`15.197.225.128`, `3.33.251.168`) and the AWS one (`3.6.62.19`). Then add:
+
+   | Type | Name | Target | Proxy |
+   | --- | --- | --- | --- |
+   | CNAME | `@` (`gudiyastories.com`) | `gudiya-stories.netlify.app` (yours) | **DNS only** (grey cloud) |
+   | CNAME | `www` | `gudiya-stories.netlify.app` (yours) | **DNS only** (grey cloud) |
+
+   Cloudflare allows a CNAME on `@` (it "flattens" it). Use **DNS only**: Netlify then issues and renews the HTTPS certificate itself, and Netlify already has its own global CDN.
+3. In Cloudflare → **Rules**, delete any redirect or page rule left over from the old site. Cloudflare's SSL/TLS mode doesn't matter with DNS only.
+4. Back in Netlify → Domain management → **HTTPS** → **Verify DNS configuration**. The certificate appears within a few minutes. Set `gudiyastories.com` as the **primary domain** (www then redirects to it).
+5. Set `NEXT_PUBLIC_SITE_URL` and `AUTH_URL` to `https://gudiyastories.com`, then **Deploys → Trigger deploy**.
+6. Add `https://gudiyastories.com` and `https://www.gudiyastories.com` to the R2 CORS rule, and set the Razorpay webhook to `https://gudiyastories.com/api/razorpay/webhook`.
 
 ## Scheduled jobs (already set up)
 

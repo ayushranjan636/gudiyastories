@@ -44,6 +44,11 @@ export function SiteFooter() {
                     </Link>
                   </li>
                 ))}
+                <li>
+                  <Link href="/gallery" className="hover:text-leaf">
+                    Readers&apos; gallery
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>

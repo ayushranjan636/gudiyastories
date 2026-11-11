@@ -23,6 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     page("/for-schools", 0.7),
     page("/resources", 0.6),
     page("/blog", 0.6),
+    page("/gallery", 0.6),
     page("/about", 0.5),
     ...products.map((p) => page(p.type === "BUNDLE" ? `/sets/${p.slug}` : `/books/${p.slug}`, 0.8)),
     ...classes.map((c) => page(`/classes/${c.slug}`, 0.7)),

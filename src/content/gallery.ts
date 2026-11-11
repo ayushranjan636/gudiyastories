@@ -1,7 +1,7 @@
 // Photos shown on the home and About pages. Edit captions here.
 // Images live in /public/recognition and /public/gallery (enhanced copies of the originals).
 
-export type Photo = { src: string; width: number; height: number; alt: string; caption: string; note?: string };
+export type Photo = { src: string; width: number; height: number; alt: string; caption: string; note?: string; /** Slug of the book the page comes from. */ book?: string };
 
 export const MOMENTS: Photo[] = [
   {
@@ -59,13 +59,21 @@ const clip = (slug: string): InUse => ({ kind: "video", ...READER_CLIPS[slug]!, 
 
 /** Pages from the Focus books, coloured in by readers (stills from Gudiya Stories' own posts). */
 export const COLOURED: Photo[] = [
-  { src: "/readers/coloured/koala-mother-and-baby.webp", width: 1000, height: 1000, alt: "A mother and baby koala mandala page, coloured in pastel sketch pen and cut out", caption: "Koala and baby" },
-  { src: "/readers/coloured/horse.webp", width: 1000, height: 815, alt: "A horse mandala page with a mane coloured in every shade of the rainbow", caption: "Rainbow horse" },
-  { src: "/readers/coloured/bear.webp", width: 1000, height: 1000, alt: "A bear mandala page coloured in bright stripes of red, pink, green and blue", caption: "Striped bear" },
-  { src: "/readers/coloured/parrot-framed.webp", width: 630, height: 1000, alt: "A parrot and flowers mandala page, coloured and framed on a wall", caption: "Framed parrot" },
-  { src: "/readers/coloured/ostriches.webp", width: 1000, height: 1000, alt: "Two ostrich mandala pages, coloured and cut out", caption: "Ostrich pair" },
-  { src: "/readers/coloured/koala-pair.webp", width: 1000, height: 1000, alt: "Two koalas mandala page coloured in warm reds, greens and blues", caption: "Koala hug" },
+  { book: "focus-nature-mandala-colouring-book", src: "/readers/coloured/koala-mother-and-baby.webp", width: 1000, height: 1000, alt: "A mother and baby koala mandala page, coloured in pastel sketch pen and cut out", caption: "Koala and baby" },
+  { book: "focus-nature-mandala-colouring-book", src: "/readers/coloured/horse.webp", width: 1000, height: 815, alt: "A horse mandala page with a mane coloured in every shade of the rainbow", caption: "Rainbow horse" },
+  { book: "focus-nature-mandala-colouring-book", src: "/readers/coloured/bear.webp", width: 1000, height: 1000, alt: "A bear mandala page coloured in bright stripes of red, pink, green and blue", caption: "Striped bear" },
+  { book: "focus-patterns-and-designs-level-1", src: "/readers/coloured/parrot-framed.webp", width: 630, height: 1000, alt: "A parrot and flowers mandala page, coloured and framed on a wall", caption: "Framed parrot" },
+  { book: "focus-nature-mandala-colouring-book", src: "/readers/coloured/ostriches.webp", width: 1000, height: 1000, alt: "Two ostrich mandala pages, coloured and cut out", caption: "Ostrich pair" },
+  { book: "focus-nature-mandala-colouring-book", src: "/readers/coloured/koala-pair.webp", width: 1000, height: 1000, alt: "Two koalas mandala page coloured in warm reds, greens and blues", caption: "Koala hug" },
+  { book: "focus-fruits-and-vegetables-mandala-colouring-book", src: "/readers/coloured/grapes.webp", width: 868, height: 1000, alt: "A bunch of grapes mandala page, every grape coloured in a different pattern of purple, blue, orange and green", caption: "Patterned grapes" },
+  { book: "focus-nature-mandala-colouring-book", src: "/readers/coloured/seahorse.webp", width: 617, height: 1000, alt: "A seahorse mandala page coloured in coral pink, lime green, orange and turquoise", caption: "Coral seahorse" },
+  { book: "focus-nature-mandala-colouring-book", src: "/readers/coloured/heron.webp", width: 701, height: 1000, alt: "A heron mandala page with pink and yellow feathers and a scalloped blue and green neck", caption: "Pink heron" },
+  { book: "focus-nature-mandala-colouring-book", src: "/readers/coloured/elephant.webp", width: 913, height: 1000, alt: "A front-facing elephant mandala page with ears and trunk coloured in rainbow stripes", caption: "Rainbow elephant" },
+  { book: "focus-nature-mandala-colouring-book", src: "/readers/coloured/squirrel.webp", width: 970, height: 1000, alt: "A squirrel mandala page coloured in pink, orange and lime with a patterned tail", caption: "Squirrel and acorn" },
 ];
+
+/** The six shown on the home page; all of them are on /gallery. */
+export const HOME_COLOURED: Photo[] = [9, 0, 7, 10, 1, 6].map((i) => COLOURED[i]!);
 const coloured = (i: number): InUse => ({ kind: "photo", ...COLOURED[i]!, caption: `Coloured by a reader: ${COLOURED[i]!.caption.toLowerCase()}.` });
 
 export const IN_USE: Record<string, InUse[]> = {
@@ -76,8 +84,11 @@ export const IN_USE: Record<string, InUse[]> = {
     reviews,
     { kind: "photo", src: "/readers/focus-nature-mandala-colouring-book.webp", width: 1400, height: 933, alt: "A girl sitting on a bench holding the Focus Nature Mandala Colouring Book", caption: "Ready to colour." },
     coloured(0),
+    coloured(9),
+    coloured(10),
+    coloured(7),
+    coloured(8),
     coloured(4),
-    coloured(5),
   ],
   "focus-patterns-and-designs-level-1": [
     screenTime,
@@ -87,6 +98,7 @@ export const IN_USE: Record<string, InUse[]> = {
   "focus-fruits-and-vegetables-mandala-colouring-book": [
     v("improves-focus", 478, 850, "Mandala pages that improve focus."),
     { kind: "photo", src: "/readers/focus-fruits-and-vegetables-mandala-colouring-book.webp", width: 935, height: 1400, alt: "A smiling woman holding the green Focus Fruits and Vegetables Mandala Colouring Book", caption: "The Fruits and Vegetables book." },
+    coloured(6),
     screenTime,
   ],
 };

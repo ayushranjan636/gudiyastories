@@ -48,6 +48,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Deploy builds (GitHub Actions) go to .next-deploy; local dev keeps .next.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   typedRoutes: true,
   poweredByHeader: false,
   turbopack: {

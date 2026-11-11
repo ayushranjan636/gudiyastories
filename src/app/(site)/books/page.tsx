@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { getCatalogue } from "@/features/catalogue/repo";
 import { parseFilters } from "@/features/catalogue/filters";
 import { BooksBrowser } from "./books-browser";
+import { JsonLd } from "@/components/site/json-ld";
+import { SITE } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Books",
@@ -37,6 +39,26 @@ export default async function BooksPage({ searchParams }: { searchParams: Promis
           <BooksBrowser items={items} values={values} initial={parseFilters(sp)} />
         </Suspense>
       </div>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "Gudiya Stories books",
+          url: `${SITE.url}/books`,
+          isPartOf: { "@id": `${SITE.url}/#website` },
+          mainEntity: {
+            "@type": "ItemList",
+            numberOfItems: products.length,
+            itemListElement: products.map((p, i) => ({
+              "@type": "ListItem",
+              position: i + 1,
+              url: `${SITE.url}${p.type === "BUNDLE" ? "/sets/" : "/books/"}${p.slug}`,
+              name: p.title,
+              image: `${SITE.url}${p.cover.src}`,
+            })),
+          },
+        }}
+      />
     </div>
   );
 }

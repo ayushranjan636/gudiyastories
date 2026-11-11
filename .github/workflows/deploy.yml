@@ -1,0 +1,89 @@
+# Every push to main: check → build → ship to the EC2 server → switch over.
+# Nothing to run on your computer. Takes about 3–4 minutes.
+#
+# Needs two repository secrets (Settings → Secrets and variables → Actions):
+#   DEPLOY_HOST     the server's Elastic IP, e.g. 13.235.10.20
+#   DEPLOY_SSH_KEY  the deploy private key (see docs/DEPLOY-EC2.md)
+# and one repository variable:
+#   SITE_URL        https://gudiyastories.com
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# One deploy at a time; a newer push waits rather than racing the current one.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04-arm   # same processor family as the t4g server
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Check (types, lint, tests)
+        run: |
+          npx next typegen >/dev/null
+          npx tsc --noEmit
+          npx eslint .
+          npx vitest run
+
+      - name: Build
+        env:
+          NEXT_DIST_DIR: .next-deploy
+          NODE_ENV: production
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL }}
+          STORAGE_DRIVER: local
+        run: |
+          test -n "$NEXT_PUBLIC_SITE_URL" || { echo "Set the SITE_URL repository variable."; exit 1; }
+          npx next build
+          rm -rf .next-deploy/cache
+          find .next-deploy -name '*.map' -delete
+
+      - name: Ship
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          ssh-keyscan -T 20 -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          SSH="ssh -i $HOME/.ssh/deploy -o BatchMode=yes -o ServerAliveInterval=30"
+          ID="$(date -u +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
+          $SSH "ubuntu@$HOST" "mkdir -p /srv/gudiya/incoming/$ID"
+          rsync -az --delete -e "$SSH" \
+            --copy-dest=/srv/gudiya/current/ \
+            --exclude '.git/' --exclude '/node_modules/' --exclude '/.next/' \
+            --exclude '.env' --exclude '.env.*' --exclude 'storage/' --exclude '.github/' \
+            --exclude 'assets-inbox/' --exclude 'public/Deepesh sir/' --exclude '/docs/' \
+            --exclude '*.test.ts' --exclude '.claude-sync/' --exclude '.netlify/' \
+            ./ "ubuntu@$HOST:/srv/gudiya/incoming/$ID/"
+          $SSH "ubuntu@$HOST" "bash /srv/gudiya/incoming/$ID/deploy/server/release.sh $ID"
+
+      - name: Check it's live
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS --max-time 15 "$SITE_URL/api/health"; then echo; exit 0; fi
+            sleep 10
+          done
+          echo "::warning::The server is healthy, but $SITE_URL/api/health didn't answer from outside. Check Cloudflare DNS."

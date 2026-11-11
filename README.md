@@ -46,21 +46,19 @@ npm run dev
 | Online payments | Paste your Razorpay keys in Admin → Settings → Online payments (or set them in `.env`). Real payments start at once. The live site accepts live keys only. See [docs/PAYMENTS.md](docs/PAYMENTS.md). |
 | WhatsApp confirmations | Optional: `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ORDER_TEMPLATE` (Meta WhatsApp Cloud API) |
 | Cash on delivery | Admin → Settings → Delivery and payment |
-| Image uploads in admin | Locally nothing: saved to `storage/uploads`. Live site: Cloudflare R2, see [docs/STORAGE.md](docs/STORAGE.md) |
+| Image uploads in admin | Nothing: saved to `storage/uploads` locally and on the live server. Cloudflare R2 / S3 optional, see [docs/STORAGE.md](docs/STORAGE.md) |
 | Emails (orders, shipping, enquiries, review links) | `RESEND_API_KEY`, `EMAIL_FROM`, `OWNER_NOTIFICATION_EMAIL` |
 | Scheduled jobs (payment check, expiring unpaid orders, low-stock and follow-up email) | `CRON_SECRET`; on Netlify they run by themselves (`netlify.toml`) |
 
 Until a feature is configured, the site falls back gracefully (WhatsApp ordering, paste-an-address images, no emails).
 
-## Go live (free): Netlify + Supabase + Cloudflare R2
+## Live site: AWS EC2 + GitHub Actions
 
-Step by step, with every setting: **[docs/DEPLOY-NETLIFY.md](docs/DEPLOY-NETLIFY.md)**.
+**Push to `main` and it goes live by itself** in about 3–4 minutes. GitHub checks, builds and ships the site; nothing runs on your computer. One AWS EC2 server in Mumbai (t4g.small, about ₹1,450 a month) runs the site, admin and database, behind Cloudflare.
 
-- **Netlify** runs the site and admin, and deploys every push to `main`. Each build first updates the database (`npm run db:deploy`).
-- **Supabase** (Mumbai) holds the database.
-- **Cloudflare R2** holds the uploads. The admin's browser uploads straight to R2, so large videos never hit Netlify's request limits.
-- **Razorpay:** paste live keys in Admin → Settings → Online payments.
-- **Checks:** `/api/health` reports whether the site and database are up. `/robots.txt` and `/sitemap.xml` are generated.
+Everything, including where settings live, security and backups: **[docs/DEPLOY-EC2.md](docs/DEPLOY-EC2.md)**.
+
+`/api/health` reports whether the site and database are up; `/robots.txt` and `/sitemap.xml` are generated.
 
 ## Online classes
 
