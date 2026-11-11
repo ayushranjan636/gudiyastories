@@ -4,14 +4,16 @@ import { db } from "@/server/db";
 import { AdminNav } from "./admin-nav";
 import { credentialsStatus } from "@/features/payments/credentials";
 import { hasEmail } from "@/server/email";
+import { countNewLeads } from "@/features/orders/leads";
 
 export const metadata: Metadata = { title: { default: "Admin", template: "%s · Admin" }, robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const admin = await requireAdmin();
-  const [toPack, newEnquiries, pendingReviews] = await Promise.all([
+  const [toPack, newLeads, newEnquiries, pendingReviews] = await Promise.all([
     db.order.count({ where: { status: "PAID" } }),
+    countNewLeads(),
     db.enquiry.count({ where: { stage: "NEW" } }),
     db.review.count({ where: { status: "PENDING" } }),
   ]);
@@ -33,7 +35,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 : null;
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[15rem_1fr]">
-      <AdminNav admin={{ name: admin.name, role: admin.role }} counts={{ toPack, newEnquiries, pendingReviews }} />
+      <AdminNav admin={{ name: admin.name, role: admin.role }} counts={{ toPack, newLeads, newEnquiries, pendingReviews }} />
       <main id="main" className="min-w-0 px-5 py-8 lg:px-10">
         {banner ? <p className="mb-6 rounded-lg border border-[#F2B91E]/60 bg-[#F2B91E]/15 px-4 py-2.5 text-small">{banner}</p> : null}
         {children}

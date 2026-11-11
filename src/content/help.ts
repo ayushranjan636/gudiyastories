@@ -91,6 +91,7 @@ export const HELP: Record<string, HelpPage> = {
         heading: "What we collect",
         body: [
           "When you order: your name, phone, email and delivery address. We need these to deliver your books and email you updates about your order.",
+          "If you fill in checkout but the payment doesn't go through, we keep those details for up to 90 days and may call or message you once to help you finish the order. Tell us if you'd rather we didn't, and we won't.",
           "When you leave your email for resources: just the email, and only if you choose to.",
         ],
       },

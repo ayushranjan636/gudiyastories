@@ -7,6 +7,7 @@ import { formatDate } from "@/lib/format";
 import { SITE } from "@/config/site";
 import { getSetting } from "@/server/settings";
 import { PrintButton } from "./print-button";
+import { privateOrderLinkOk } from "@/features/orders/link-guard";
 
 export const metadata: Metadata = { title: "Receipt", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -16,6 +17,8 @@ const when = (d: Date) => new Intl.DateTimeFormat("en-GB", { dateStyle: "long", 
 /** The customer's proof of purchase. Opens only with the private link from the confirmation page or email. */
 export default async function ReceiptPage({ params, searchParams }: { params: Promise<{ number: string }>; searchParams: Promise<{ t?: string }> }) {
   const [{ number }, { t }] = await Promise.all([params, searchParams]);
+  // Only with the private link (and never for someone trying many links).
+  if (!(await privateOrderLinkOk(number, t))) notFound();
   const o = await getPublicOrder(number, undefined, t);
   if (!o || !o.address) notFound();
   // No receipt for a checkout that was never paid.

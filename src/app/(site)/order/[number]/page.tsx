@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MessageCircle, Printer } from "lucide-react";
 import { getPublicOrder } from "@/features/orders/public";
+import { privateOrderLinkOk } from "@/features/orders/link-guard";
 import { OrderSummary } from "@/components/site/order-summary";
 import { SuccessMark } from "./success-mark";
 import { PendingRefresh } from "./pending-refresh";
@@ -23,6 +24,8 @@ export default async function OrderPage({
   searchParams: Promise<{ placed?: string; verify?: string; t?: string }>;
 }) {
   const [{ number }, sp] = await Promise.all([params, searchParams]);
+  // Only with the private link (and never for someone trying many links).
+  if (!(await privateOrderLinkOk(number, sp.t))) notFound();
   let order = await getPublicOrder(number, undefined, sp.t);
   // Without the private link this page shows nothing, so an order number alone reveals no one's order.
   if (!order || !order.address) notFound();

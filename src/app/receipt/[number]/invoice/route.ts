@@ -1,4 +1,4 @@
-import { checkOrderToken } from "@/features/orders/token";
+import { privateOrderLinkOk } from "@/features/orders/link-guard";
 import { invoicePdf } from "@/features/orders/invoice-pdf";
 import { hasDatabase } from "@/server/env";
 
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request, ctx: { params: Promise<{ number: string }> }) {
   const { number } = await ctx.params;
   const t = new URL(req.url).searchParams.get("t");
-  if (!hasDatabase() || !/^GS-\d{7}$/.test(number) || !checkOrderToken(number, t)) return new Response("Not found", { status: 404 });
+  if (!hasDatabase() || !(await privateOrderLinkOk(number, t))) return new Response("Not found", { status: 404 });
   const pdf = await invoicePdf(number);
   if (!pdf) return new Response("Not found", { status: 404 });
   return new Response(Buffer.from(pdf.bytes), {

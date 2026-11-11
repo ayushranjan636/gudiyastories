@@ -17,6 +17,7 @@ import {
   MessageSquareQuote,
   NotebookPen,
   Package,
+  PhoneCall,
   Settings,
   Ticket,
   Users,
@@ -25,7 +26,7 @@ import {
 import { cn } from "@/lib/cn";
 import { logout } from "../login/actions";
 
-type Counts = { toPack: number; newEnquiries: number; pendingReviews: number };
+type Counts = { toPack: number; newLeads: number; newEnquiries: number; pendingReviews: number };
 
 export function AdminNav({ admin, counts }: { admin: { name: string; role: string }; counts: Counts }) {
   const pathname = usePathname();
@@ -33,6 +34,7 @@ export function AdminNav({ admin, counts }: { admin: { name: string; role: strin
   const items = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/orders", label: "Orders", icon: Package, count: counts.toPack },
+    { href: "/admin/leads", label: "Leads", icon: PhoneCall, count: counts.newLeads },
     { href: "/admin/products", label: "Products", icon: BookOpen },
     { href: "/admin/inventory", label: "Inventory", icon: Boxes },
     { href: "/admin/classes", label: "Classes", icon: GraduationCap },

@@ -116,6 +116,10 @@ model Order {
 
   customerNote   String?
   internalNotes  String?
+  // Abandoned checkout follow-up (Admin → Leads): NEW, CONTACTED, CONVERTED or LOST.
+  leadStatus     String?
+  leadNote       String?
+  leadUpdatedAt  DateTime?     @db.Timestamptz(3)
 
   // Attribution (first-party analytics session hash and UTMs)
   sessionId      String?

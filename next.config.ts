@@ -63,6 +63,16 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: securityHeaders },
       { source: "/admin/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+      // Private order pages: the private link must never leak to other sites (Referer),
+      // and no browser, proxy or Cloudflare may keep a copy.
+      ...["/receipt/:path*", "/order/:path*", "/review/:path*", "/track"].map((source) => ({
+        source,
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+        ],
+      })),
       // Pictures and videos in /public: browsers keep them for a month. A changed file
       // should get a new name (or wait a month) — the pages themselves are never cached this long.
       {
