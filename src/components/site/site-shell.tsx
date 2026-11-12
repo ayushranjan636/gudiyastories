@@ -10,6 +10,7 @@ import { ButterflyGuide } from "@/components/motion/butterfly-guide";
 import { NavigationProgress } from "@/components/motion/navigation-progress";
 import { Suspense } from "react";
 import { JsonLd } from "@/components/site/json-ld";
+import { GoogleAnalytics } from "@/components/site/google-analytics";
 import { SITE } from "@/config/site";
 import { MYSTORE_SELLER_URL } from "@/content/marketplaces";
 import { getShippingRules } from "@/server/settings";
@@ -28,6 +29,7 @@ export async function SiteShell({ children }: { children: React.ReactNode }) {
       <SiteFooter />
       <BagDrawer />
       <PageViewTracker />
+      <GoogleAnalytics />
       <ButterflyGuide />
       <JsonLd
         data={{
@@ -43,11 +45,19 @@ export async function SiteShell({ children }: { children: React.ReactNode }) {
               logo: `${SITE.url}/brand/gudiya-stories-lockup.png`,
               email: SITE.email,
               telephone: SITE.phoneE164,
-              address: { "@type": "PostalAddress", addressLocality: SITE.city, addressRegion: SITE.region, addressCountry: "IN" },
+              address: {
+                "@type": "PostalAddress",
+                // Registered business address (also on invoices and the Terms page).
+                streetAddress: "Flat No. 106, Garuda Tower, Lakshmipuram",
+                addressLocality: SITE.city,
+                addressRegion: SITE.region,
+                postalCode: "517501",
+                addressCountry: "IN",
+              },
               areaServed: { "@type": "Country", name: "India" },
               founder: { "@type": "Person", "@id": `${SITE.url}/about#bharathi`, name: SITE.author },
               knowsAbout: ["Children's picture books", "Value-based education", "Early childhood education", "Mandala colouring for children", "Reading aloud"],
-              contactPoint: { "@type": "ContactPoint", contactType: "customer service", email: SITE.email, telephone: SITE.phoneE164 },
+              contactPoint: { "@type": "ContactPoint", contactType: "customer service", email: SITE.email, telephone: SITE.phoneE164, areaServed: "IN" },
               sameAs: [SITE.instagram, MYSTORE_SELLER_URL],
             },
             {

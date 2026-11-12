@@ -29,7 +29,7 @@ export const COLLECTIONS: Collection[] = [
     slug: "kindness",
     title: "Books About Kindness for Kids",
     description:
-      "Picture books about kindness, friendship and respect for children aged 6 to 8, written by an early-years teacher in India. Short, gentle reads with questions to talk about.",
+      "Picture books about kindness, friendship and respect for children aged 6 to 8, by an early-years teacher in India. Short, gentle reads with questions to talk about.",
     eyebrow: "Books about kindness",
     h1: "Books about kindness for kids",
     intro: [

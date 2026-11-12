@@ -40,6 +40,7 @@ export function staticCatalogue(): Catalogue {
     components: [],
     available: null,
     afterTheStory: null,
+    updatedAt: null,
   }));
 
   const bySku = new Map(books.map((b) => [b.sku, b]));

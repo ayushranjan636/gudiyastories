@@ -51,6 +51,8 @@ jobs:
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: "1"
           NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL }}
+          # Optional: GA4 measurement ID (G-…). Empty = Google Analytics off.
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.GA_MEASUREMENT_ID }}
           STORAGE_DRIVER: local
         run: |
           test -n "$NEXT_PUBLIC_SITE_URL" || { echo "Set the SITE_URL repository variable."; exit 1; }

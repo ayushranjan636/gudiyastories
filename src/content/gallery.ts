@@ -39,7 +39,7 @@ export type InUse =
   | { kind: "video"; src: string; poster: string; width: number; height: number; caption: string; ambient?: boolean }
   | { kind: "photo"; src: string; width: number; height: number; alt: string; caption: string };
 
-const v = (name: string, width: number, height: number, caption: string): InUse => ({ kind: "video", src: `/videos/${name}.mp4`, poster: `/videos/${name}.jpg`, width, height, caption });
+const v = (name: string, width: number, height: number, caption: string): InUse => ({ kind: "video", src: `/videos/${name}.mp4`, poster: `/videos/${name}.webp`, width, height, caption });
 const screenTime = v("reduce-screen-time", 720, 900, "Less screen time, more focus: the three Focus books.");
 const storybooks = v("happy-reader", 720, 720, "Our storybooks with their young readers.");
 const reviews = v("mandala-parent-review", 720, 1280, "What parents say about the storybooks and colouring books.");
@@ -53,7 +53,7 @@ export const READER_CLIPS: Record<string, { src: string; poster: string; caption
     ["mystical-landscapes-of-donimalai", "Mystical Landscapes of Donimalai, ready for the next adventure."],
     ["winter-wonderland", "Winter Wonderland, with a reader who can't wait for Christmas."],
     ["spread-love", "Spread Love, on the reading table."],
-  ].map(([slug, caption]) => [slug, { src: `/readers/clips/${slug}.mp4`, poster: `/readers/clips/${slug}.jpg`, caption }]),
+  ].map(([slug, caption]) => [slug, { src: `/readers/clips/${slug}.mp4`, poster: `/readers/clips/${slug}.webp`, caption }]),
 );
 const clip = (slug: string): InUse => ({ kind: "video", ...READER_CLIPS[slug]!, width: 640, height: 640, ambient: true });
 

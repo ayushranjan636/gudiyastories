@@ -10,6 +10,8 @@ import { formatINR } from "@/lib/money";
 import { JsonLd } from "@/components/site/json-ld";
 import { SITE } from "@/config/site";
 import { faqFromHtml, sanitizeHtml, withVideoStills } from "@/lib/sanitize";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
+import { absoluteUrl, pageMetadata, snippet } from "@/lib/seo";
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
 
@@ -28,12 +30,18 @@ type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ previe
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const post = await getPost((await params).slug, (await searchParams).preview);
   if (!post) return {};
-  return {
+  const image = post.ogImageUrl ?? post.coverImageUrl;
+  const date = post.publishedAt ?? post.publishAt;
+  return pageMetadata({
     title: post.seoTitle ?? post.title,
-    description: post.seoDescription ?? post.excerpt,
-    robots: post.isPreview ? { index: false } : undefined,
-    openGraph: { type: "article", images: post.ogImageUrl ?? post.coverImageUrl ?? undefined },
-  };
+    description: snippet(post.seoDescription ?? post.excerpt),
+    path: `/blog/${post.slug}`,
+    type: "article",
+    image: image ? { url: image, alt: post.coverImageAlt ?? post.title } : null,
+    noindex: post.isPreview,
+    publishedTime: date?.toISOString(),
+    modifiedTime: post.updatedAt.toISOString(),
+  });
 }
 
 export default async function BlogPostPage({ params, searchParams }: Props) {
@@ -53,11 +61,10 @@ export default async function BlogPostPage({ params, searchParams }: Props) {
         </p>
       ) : null}
       <header className="content-grid max-w-3xl">
+        <Breadcrumbs className="mb-4" items={[{ name: "Blog", href: "/blog" }, { name: post.title, href: `/blog/${post.slug}` }]} />
         <p className="text-small text-ink-soft">
-          <Link href="/blog" className="hover:text-ink">
-            Blog
-          </Link>
-          {post.category ? ` · ${post.category.name}` : ""} · {post.readingMinutes} min read
+          {post.category ? `${post.category.name} · ` : ""}
+          {post.readingMinutes} min read
         </p>
         <h1 className="mt-4 text-h2">{post.title}</h1>
         <p className="mt-4 text-lead text-ink-soft">{post.excerpt}</p>
@@ -118,10 +125,12 @@ export default async function BlogPostPage({ params, searchParams }: Props) {
           description: post.excerpt,
           datePublished: date?.toISOString(),
           dateModified: post.updatedAt.toISOString(),
-          author: { "@type": "Person", name: SITE.author },
-          publisher: { "@type": "Organization", name: SITE.name },
-          image: post.coverImageUrl ?? undefined,
+          author: { "@type": "Person", "@id": `${SITE.url}/about#bharathi`, name: SITE.author, url: `${SITE.url}/about` },
+          publisher: { "@type": "Organization", "@id": `${SITE.url}/#org`, name: SITE.name, logo: { "@type": "ImageObject", url: `${SITE.url}/brand/gudiya-stories-lockup.png` } },
+          image: post.ogImageUrl || post.coverImageUrl ? absoluteUrl((post.ogImageUrl ?? post.coverImageUrl)!) : undefined,
           mainEntityOfPage: `${SITE.url}/blog/${post.slug}`,
+          inLanguage: "en-IN",
+          ...(post.category ? { articleSection: post.category.name } : {}),
         }}
       />
       {faq.length ? (

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Image from "next/image";
 import { Valley } from "@/components/home/valley";
 import { Reveal } from "@/components/motion/reveal";
@@ -8,10 +9,12 @@ import { RecognitionPhotos } from "@/components/site/recognition-photos";
 import { JsonLd } from "@/components/site/json-ld";
 import { SITE } from "@/config/site";
 
-export const metadata: Metadata = {
-  title: "About",
-  description: "Gudiya Stories is S.V. Bharathi, an early-years teacher in Tirupati who writes and designs value-based picture books.",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "About S.V. Bharathi, author and illustrator",
+  description:
+    "Gudiya Stories is S.V. Bharathi, an early-years teacher in Tirupati who writes and designs value-based picture books and mandala colouring books, printed in India.",
+  path: "/about",
+});
 
 const STEPS = [
   { n: "01", title: "Write", text: "Each story starts from the questions children actually ask in class." },

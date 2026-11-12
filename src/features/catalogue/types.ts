@@ -37,6 +37,8 @@ export type CatalogueProduct = {
   /** Units available to sell. null = stock is not tracked yet (no database). */
   available: number | null;
   afterTheStory: { title: string; url: string } | null;
+  /** Last time the product was edited (ISO date), for the sitemap. Null for seed data. */
+  updatedAt: string | null;
 };
 
 export type Catalogue = {

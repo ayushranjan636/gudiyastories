@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import { getCatalogue } from "@/features/catalogue/repo";
 import { parseFilters } from "@/features/catalogue/filters";
@@ -8,12 +9,12 @@ import { SITE } from "@/config/site";
 import Link from "next/link";
 import { COLLECTIONS } from "@/content/collections";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Children's Picture Books & Mandala Colouring Books",
   description:
-    "Value-based picture books for ages 4 to 13 and mindful mandala colouring books, written by early-years teacher S.V. Bharathi. Choose by value, then by age. Delivered across India.",
-  alternates: { canonical: "/books" },
-};
+    "Value-based picture books for ages 4 to 13 and mandala colouring books by early-years teacher S.V. Bharathi. Choose by value, then by age. Delivered across India.",
+  path: "/books",
+});
 
 export default async function BooksPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const [{ products, values }, sp] = await Promise.all([getCatalogue(), searchParams]);

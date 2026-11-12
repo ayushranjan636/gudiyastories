@@ -3,8 +3,23 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { HELP } from "@/content/help";
 import { SITE } from "@/config/site";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
+import { pageMetadata } from "@/lib/seo";
+
+const GA_ON = /^G-[A-Z0-9]{4,20}$/.test((process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "").trim());
 
 type Props = { params: Promise<{ topic: string }> };
+
+// Search descriptions (the on-page summaries are short; these say what the page answers).
+const HELP_DESCRIPTIONS: Record<string, string> = {
+  shipping: "Gudiya Stories delivery charges, dispatch and delivery times across India: ₹60 per order, free from ₹499, dispatched in 2–3 working days with email tracking.",
+  returns: "Book arrived damaged or wrong? Tell Gudiya Stories within 7 days of delivery for a replacement or a full refund to your original payment method.",
+  faq: "What parents and teachers ask Gudiya Stories most: which book to start with, how strict the ages are, how to pay, tracking your order and where else we sell.",
+  privacy: GA_ON
+    ? "What personal data Gudiya Stories collects when you order, why we keep it, who sees it, how we use Google Analytics and the choices you have."
+    : "What personal data Gudiya Stories collects when you order, why we keep it, who sees it, our cookie-free analytics and the choices you have.",
+  terms: "How buying from Gudiya Stories works: prices, orders and payment, use of our content, and the registered business details of the shop in Tirupati.",
+};
 
 export function generateStaticParams() {
   return Object.keys(HELP).map((topic) => ({ topic }));
@@ -12,7 +27,9 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const h = HELP[(await params).topic];
-  return h ? { title: h.title, description: h.summary } : {};
+  if (!h) return {};
+  const topic = (await params).topic;
+  return pageMetadata({ title: h.title, description: HELP_DESCRIPTIONS[topic] ?? h.summary, path: `/help/${topic}`, noindex: h.draft });
 }
 
 export default async function HelpPage({ params }: Props) {
@@ -38,6 +55,7 @@ export default async function HelpPage({ params }: Props) {
         </ul>
       </nav>
       <article className="lg:col-span-8">
+        <Breadcrumbs className="mb-6" items={[{ name: h.title, href: `/help/${topic}` }]} />
         <h1 className="text-h2">{h.title}</h1>
         <p className="mt-4 text-lead text-ink-soft">{h.summary}</p>
         <div className="mt-10 space-y-10">

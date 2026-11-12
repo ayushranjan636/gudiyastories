@@ -13,6 +13,19 @@ import { AlsoOn } from "@/components/book/also-on";
 import { BuyBox, MobileBuyBar } from "../../books/[slug]/buy-box";
 import { FannedCovers } from "./fanned-covers";
 import { BUNDLES } from "../../../../../prisma/data/catalogue";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
+import { absoluteUrl, pageMetadata, snippet } from "@/lib/seo";
+import { offerSchema } from "@/features/catalogue/schema";
+import { getShippingRules } from "@/server/settings";
+import type { CatalogueProduct } from "@/features/catalogue/types";
+
+/** "3 picture books", "3 colouring books" or "3 books", from what the set contains. */
+function setKind(parts: CatalogueProduct[]) {
+  const n = parts.length;
+  if (parts.every((x) => x.type === "STORY")) return `${n} picture books`;
+  if (parts.every((x) => x.type === "COLOURING")) return `${n} colouring books`;
+  return `${n} books`;
+}
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -22,20 +35,30 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const p = await getProduct((await params).slug);
-  if (!p) return {};
+  const slug = (await params).slug;
+  const [p, { products }] = await Promise.all([getProduct(slug), getCatalogue()]);
+  if (!p || p.type !== "BUNDLE") return {};
+  const bySlug = new Map(products.map((x) => [x.slug, x]));
+  const parts = p.components.flatMap((c) => (bySlug.get(c.slug) ? [bySlug.get(c.slug)!] : []));
+  const singles = p.components.reduce((n, c) => n + (bySlug.get(c.slug)?.pricePaise ?? 0) * c.quantity, 0);
+  const save = singles - p.pricePaise;
   const share = BUNDLES.find((b) => b.slug === p.slug)?.shareImage;
-  return {
-    title: p.title,
-    description: p.shortDescription,
-    alternates: { canonical: `/sets/${p.slug}` },
-    ...(share ? { openGraph: { images: [{ url: share.src, width: share.width, height: share.height, alt: share.alt }] } } : {}),
-  };
+  const ages = formatAges(p.ageMin, p.ageMax) ?? "Children";
+  return pageMetadata({
+    title: p.seoTitle || `${p.title}: ${setKind(parts)}${formatAges(p.ageMin, p.ageMax) ? `, ${ages}` : ""}`,
+    absolute: Boolean(p.seoTitle),
+    description: snippet(
+      p.seoDescription ||
+        `${parts.map((x) => x.title).join(", ")}. ${setKind(parts)} by ${SITE.author} for ${ages.toLowerCase()}, ${formatINR(p.pricePaise)} as a set${save > 0 ? ` (save ${formatINR(save)})` : ""}. Delivered across India.`,
+    ),
+    path: `/sets/${p.slug}`,
+    image: share ? { url: share.src, width: share.width, height: share.height, alt: share.alt } : { url: p.cover.src, width: p.cover.width, height: p.cover.height, alt: p.cover.alt || p.title },
+  });
 }
 
 export default async function SetPage({ params }: Params) {
   const { slug } = await params;
-  const { products } = await getCatalogue();
+  const [{ products }, shipping] = await Promise.all([getCatalogue(), getShippingRules()]);
   const set = products.find((x) => x.slug === slug && x.type === "BUNDLE");
   if (!set) notFound();
   const bySlug = new Map(products.map((x) => [x.slug, x]));
@@ -47,9 +70,12 @@ export default async function SetPage({ params }: Params) {
   const save = singles - set.pricePaise;
   const coverId = `set-${set.slug}`;
 
+  const share = BUNDLES.find((b) => b.slug === set.slug)?.shareImage;
+
   return (
     <>
-      <section className="content-grid grid gap-12 pt-10 pb-16 md:pt-16 lg:grid-cols-12 lg:gap-16">
+      <Breadcrumbs className="content-grid pt-6" items={[{ name: "Books", href: "/books" }, { name: set.title, href: `/sets/${set.slug}` }]} />
+      <section className="content-grid grid gap-12 pt-8 pb-16 lg:grid-cols-12 lg:gap-16">
         <div className="lg:col-span-6">
           <div id={coverId} className="rounded-2xl bg-paper-deep px-6 py-14">
             <FannedCovers covers={parts.map((p) => p.cover)} />
@@ -126,14 +152,18 @@ export default async function SetPage({ params }: Params) {
           name: set.title,
           description: set.shortDescription,
           sku: set.sku,
-          brand: { "@type": "Brand", name: "Gudiya Stories" },
-          image: parts.map((p) => `${SITE.url}${p.cover.src}`),
-          offers: {
-            "@type": "Offer",
-            priceCurrency: "INR",
-            price: (set.pricePaise / 100).toFixed(2),
-            availability: set.available === 0 ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+          url: `${SITE.url}/sets/${set.slug}`,
+          brand: { "@type": "Brand", name: SITE.name },
+          category: "Media > Books",
+          image: [...(share ? [share.src] : []), ...parts.map((p) => p.cover.src)].map(absoluteUrl),
+          audience: {
+            "@type": "PeopleAudience",
+            ...(set.ageMin ? { suggestedMinAge: set.ageMin } : {}),
+            ...(set.ageMax ? { suggestedMaxAge: set.ageMax } : {}),
           },
+          // The books in the set, each with its own page.
+          isRelatedTo: parts.map((p) => ({ "@type": "Book", name: p.title, url: `${SITE.url}/books/${p.slug}`, ...(p.isbn ? { isbn: p.isbn } : {}) })),
+          offers: offerSchema({ pricePaise: set.pricePaise, available: set.available, url: `${SITE.url}/sets/${set.slug}`, shipping }),
         }}
       />
     </>

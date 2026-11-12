@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowUpRight, CalendarDays, Clock, MessageCircle, MonitorPlay, Timer, Users } from "lucide-react";
 import { getClass, getClasses } from "@/features/classes/repo";
@@ -11,6 +10,8 @@ import { JsonLd } from "@/components/site/json-ld";
 import { sanitizeHtml, withVideoStills } from "@/lib/sanitize";
 import { SITE, whatsappLink } from "@/config/site";
 import { currentAdmin } from "@/server/admin";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
+import { absoluteUrl, pageMetadata, snippet } from "@/lib/seo";
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ preview?: string }> };
 
@@ -22,14 +23,15 @@ async function load({ params, searchParams }: Props) {
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const c = await load(props);
-  if (!c) return { title: "Class not found" };
+  if (!c) return { title: "Class not found", robots: { index: false } };
   const image = c.mediaKind === "IMAGE" ? c.mediaUrl : c.posterUrl;
-  return {
-    title: c.title,
-    description: c.summary,
-    openGraph: { title: c.title, description: c.summary, images: image ?? undefined },
-    robots: c.status === "DRAFT" ? { index: false } : undefined,
-  };
+  return pageMetadata({
+    title: `${c.title}: online class with ${SITE.author}`,
+    description: snippet(c.summary),
+    path: `/classes/${c.slug}`,
+    image: image ? { url: image, alt: c.mediaAlt ?? c.title } : null,
+    noindex: c.status === "DRAFT",
+  });
 }
 
 export default async function ClassPage(props: Props) {
@@ -54,12 +56,7 @@ export default async function ClassPage(props: Props) {
         </p>
       ) : null}
 
-      <nav aria-label="Breadcrumb" className="content-grid mt-4 text-small text-ink-soft">
-        <Link href="/classes" className="hover:text-ink">
-          Online classes
-        </Link>{" "}
-        / <span className="text-ink">{c.title}</span>
-      </nav>
+      <Breadcrumbs className="content-grid mt-4" items={[{ name: "Online classes", href: "/classes" }, { name: c.title, href: `/classes/${c.slug}` }]} />
 
       <div className="content-grid mt-6 grid gap-10 lg:grid-cols-12 lg:gap-14">
         <div className="min-w-0 lg:col-span-7">
@@ -193,13 +190,14 @@ export default async function ClassPage(props: Props) {
           name: c.title,
           description: c.summary,
           url: `${SITE.url}/classes/${c.slug}`,
-          provider: { "@type": "Organization", name: SITE.name, url: SITE.url },
+          provider: { "@type": "Organization", "@id": `${SITE.url}/#org`, name: SITE.name, url: SITE.url },
+          ...(c.mediaKind === "IMAGE" && c.mediaUrl ? { image: absoluteUrl(c.mediaUrl) } : c.posterUrl ? { image: absoluteUrl(c.posterUrl) } : {}),
           ...(c.topics.length ? { teaches: c.topics } : {}),
           hasCourseInstance: {
             "@type": "CourseInstance",
             courseMode: "online",
             ...(c.startDate ? { startDate: c.startDate.toISOString().slice(0, 10) } : {}),
-            instructor: { "@type": "Person", name: SITE.author },
+            instructor: { "@type": "Person", "@id": `${SITE.url}/about#bharathi`, name: SITE.author },
           },
           offers: { "@type": "Offer", price: (c.pricePaise ?? 0) / 100, priceCurrency: "INR", availability: closed ? "https://schema.org/SoldOut" : "https://schema.org/InStock", url: c.enquiryUrl },
         }}

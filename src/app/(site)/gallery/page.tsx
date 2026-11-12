@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Image from "next/image";
 import Link from "next/link";
 import { SITE } from "@/config/site";
@@ -11,12 +12,12 @@ import { ButtonLink } from "@/components/ui/button";
 import { JsonLd } from "@/components/site/json-ld";
 import { cn } from "@/lib/cn";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Readers' gallery: mandala pages coloured by children",
   description:
-    "Mandala colouring pages finished by children who read Gudiya Stories books: animals, birds and fruit coloured in sketch pen, plus short videos of the picture books at home.",
-  alternates: { canonical: "/gallery" },
-};
+    "Mandala colouring pages finished by children who read Gudiya Stories books: animals, birds and fruit in sketch pen, plus short videos of the books at home.",
+  path: "/gallery",
+});
 
 const TILT = ["rotate-[-1.4deg]", "rotate-[1deg]", "rotate-[-0.6deg]", "rotate-[1.5deg]", "rotate-[-1deg]", "rotate-[0.5deg]"];
 const TAPE = ["bg-lime/40", "bg-[#F2B91E]/40", "bg-clay/25"];

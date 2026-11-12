@@ -65,6 +65,7 @@ async function databaseCatalogue(): Promise<Catalogue> {
       components: p.bundleItems.map((bi) => ({ slug: bi.component.slug, quantity: bi.quantity })),
       available: Math.max(0, available),
       afterTheStory: res ? { title: res.title, url: `/resources/${res.slug}` } : null,
+      updatedAt: p.updatedAt.toISOString(),
     };
   });
 

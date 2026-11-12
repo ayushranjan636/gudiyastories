@@ -28,7 +28,7 @@ import { formatClassPrice, startLabel } from "@/features/classes/format";
 
 const HOME_TITLE = "Picture Books & Colouring Books for Kids | Gudiya Stories";
 const HOME_DESCRIPTION =
-  "Value-based picture books and mindful mandala colouring books for children aged 4 to 13, written and designed by early-years teacher S.V. Bharathi in Tirupati. Delivered across India.";
+  "Value-based picture books and mandala colouring books for children aged 4 to 13, written and designed by early-years teacher S.V. Bharathi. Delivered across India.";
 
 export const metadata: Metadata = {
   title: { absolute: HOME_TITLE },

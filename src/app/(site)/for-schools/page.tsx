@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Image from "next/image";
 import { getCatalogue } from "@/features/catalogue/repo";
 import { Reveal } from "@/components/motion/reveal";
 import { EnquiryForm } from "./enquiry-form";
 
-export const metadata: Metadata = {
-  title: "For schools, libraries and CSR",
+export const metadata: Metadata = pageMetadata({
+  title: "Bulk children's books for schools, libraries and CSR",
   description:
-    "Bulk orders of Gudiya Stories books for schools, libraries, NGOs and CSR programmes, with custom bookplates and author reading sessions.",
-};
+    "Bulk orders of Gudiya Stories picture books for schools, libraries, NGOs and CSR programmes from 25 copies, with custom bookplates and author reading sessions.",
+  path: "/for-schools",
+});
 
 const TIERS = [
   { min: "25+", label: "copies", text: "A classroom set. Bulk pricing starts here." },

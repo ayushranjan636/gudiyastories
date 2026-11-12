@@ -1,5 +1,8 @@
 // Policy pages. Signed off by the owner (Nov 2026).
 
+// The privacy page mentions Google Analytics only when it is actually switched on.
+const GA_ON = /^G-[A-Z0-9]{4,20}$/.test((process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "").trim());
+
 type HelpPage = { title: string; summary: string; draft: boolean; sections: { heading: string; body: string[] }[] };
 
 export const HELP: Record<string, HelpPage> = {
@@ -96,15 +99,21 @@ export const HELP: Record<string, HelpPage> = {
         ],
       },
       {
-        heading: "Analytics without cookies",
+        heading: GA_ON ? "Analytics" : "Analytics without cookies",
         body: [
           "We count visits with our own simple analytics. It sets no cookies and stores no IP addresses. Visits are grouped by a code that changes every day, so they cannot be linked to you over time.",
+          ...(GA_ON
+            ? [
+                "We also use Google Analytics to understand which pages are useful. It sets cookies in your browser and Google receives your visit data. We have turned off advertising features and ad personalisation. You can block it with your browser's privacy settings or Google's opt-out add-on (tools.google.com/dlpage/gaoptout).",
+              ]
+            : []),
         ],
       },
       {
         heading: "Who sees it",
         body: [
-          "Razorpay processes card and UPI payments; we never see your card details. Couriers see your delivery address. Our email provider delivers order emails to you. We do not sell or share your details with anyone else.",
+          "Razorpay processes card and UPI payments; we never see your card details. Couriers see your delivery address. Our email provider delivers order emails to you.",
+          `We do not sell or share your details with anyone else${GA_ON ? " (apart from the visit data Google Analytics collects, described above)" : ""}.`,
         ],
       },
       {

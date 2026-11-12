@@ -4,6 +4,7 @@ import { COLLECTIONS } from "@/content/collections";
 import type { CatalogueProduct, CatalogueValue } from "@/features/catalogue/types";
 import { ProductCard } from "@/components/book/product-card";
 import { JsonLd } from "@/components/site/json-ld";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
 import { buttonStyles } from "@/components/ui/button";
 import { SITE, whatsappLink } from "@/config/site";
 
@@ -22,12 +23,7 @@ export function CollectionView({ c, products, values }: { c: Collection; product
 
   return (
     <div className="content-grid pt-10 md:pt-16">
-      <nav aria-label="Breadcrumb" className="text-small text-ink-soft">
-        <Link href="/books" className="hover:text-leaf">
-          Books
-        </Link>{" "}
-        / <span>{c.eyebrow}</span>
-      </nav>
+      <Breadcrumbs items={[{ name: "Books", href: "/books" }, { name: c.eyebrow, href: `/books/${c.slug}` }]} />
       <header className="mt-6 max-w-3xl">
         <h1 className="text-h2">{c.h1}</h1>
         {c.intro.map((para, i) => (
@@ -37,6 +33,7 @@ export function CollectionView({ c, products, values }: { c: Collection; product
         ))}
       </header>
 
+      <h2 className="sr-only">{c.eyebrow}: the books</h2>
       <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((p, i) => (
           <li key={p.slug}>
@@ -137,13 +134,6 @@ export function CollectionView({ c, products, values }: { c: Collection; product
                   name: p.title,
                 })),
               },
-            },
-            {
-              "@type": "BreadcrumbList",
-              itemListElement: [
-                { "@type": "ListItem", position: 1, name: "Books", item: `${SITE.url}/books` },
-                { "@type": "ListItem", position: 2, name: c.eyebrow, item: url },
-              ],
             },
             {
               "@type": "FAQPage",

@@ -19,6 +19,9 @@ import { COLLECTIONS, COLLECTION_BY_SLUG } from "@/content/collections";
 import { CollectionView } from "@/components/book/collection-view";
 import { getShippingRules } from "@/server/settings";
 import { Valley } from "@/components/home/valley";
+import { Breadcrumbs } from "@/components/site/breadcrumbs";
+import { absoluteUrl, pageMetadata, snippet } from "@/lib/seo";
+import { offerSchema } from "@/features/catalogue/schema";
 import { BuyBox, MobileBuyBar } from "./buy-box";
 import { InUseStrip } from "@/components/book/in-use";
 import { IN_USE } from "@/content/gallery";
@@ -34,20 +37,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const slug = (await params).slug;
   const col = COLLECTION_BY_SLUG.get(slug);
   if (col) {
-    return {
-      title: col.title,
-      description: col.description,
-      alternates: { canonical: `/books/${col.slug}` },
-      openGraph: {
-        title: `${col.title} · Gudiya Stories`,
-        description: col.description,
-        url: `/books/${col.slug}`,
-        siteName: "Gudiya Stories",
-        locale: "en_IN",
-        type: "website",
-        images: [{ url: "/og-home.jpg", width: 1200, height: 630, alt: "Gudiya Stories picture books and colouring books" }],
-      },
-    };
+    return pageMetadata({ title: col.title, description: col.description, path: `/books/${col.slug}` });
   }
   const p = await getProduct(slug);
   if (!p) return {};
@@ -56,21 +46,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   // " · Gudiya Stories" suffix is only added to a plain book title.
   const seoTitle = p.seoTitle || guide?.seoTitle;
   const title = seoTitle ?? p.title;
-  const description = p.seoDescription || guide?.seoDescription || p.shortDescription;
-  return {
-    title: seoTitle ? { absolute: seoTitle } : title,
+  const description = snippet(p.seoDescription || guide?.seoDescription || p.shortDescription);
+  return pageMetadata({
+    title,
+    absolute: Boolean(seoTitle),
     description,
-    alternates: { canonical: `/books/${p.slug}` },
-    openGraph: {
-      title: seoTitle ?? `${title} · Gudiya Stories`,
-      description,
-      url: `/books/${p.slug}`,
-      siteName: "Gudiya Stories",
-      locale: "en_IN",
-      type: "website",
-      images: [{ url: p.cover.src, width: p.cover.width, height: p.cover.height, alt: p.cover.alt }],
-    },
-  };
+    path: `/books/${p.slug}`,
+    image: { url: p.cover.src, width: p.cover.width, height: p.cover.height, alt: p.cover.alt || `${p.title} cover` },
+  });
 }
 
 export default async function BookPage({ params }: Params) {
@@ -92,9 +75,23 @@ export default async function BookPage({ params }: Params) {
   const [reviews, shipping] = await Promise.all([getApprovedReviews(p.id), getShippingRules()]);
   const isDonimalai = p.slug === "mystical-landscapes-of-donimalai";
   const guide = BOOK_GUIDES[p.slug];
+  // Collection pages this book appears on (e.g. "Books about kindness", "Ages 6 to 8").
+  // Age pages need a real overlap: a 6–8 book is not shown as one for 8–12 year olds.
+  const ageFit = (slug: string) => {
+    const m = /^age-(\d+)-(\d+)$/.exec(slug);
+    if (!m || p.ageMin == null) return true;
+    const lo = Math.max(p.ageMin, Number(m[1]));
+    const hi = Math.min(p.ageMax ?? 99, Number(m[2]));
+    return hi - lo >= 1;
+  };
+  const browse = COLLECTIONS.filter((c) => c.pick(p) && ageFit(c.slug));
 
+  const themes = p.values.map((v) => valueMap.get(v)?.name ?? v);
+  const kind = p.type === "COLOURING" ? "Colouring book" : "Picture book";
   const details: [string, string | null][] = [
     ["Ages", formatAges(p.ageMin, p.ageMax)],
+    ["Format", p.binding ? `${kind}, ${p.binding.toLowerCase()}` : kind],
+    ["Themes", themes.length ? themes.join(", ") : null],
     ["Pages", p.pages ? String(p.pages) : null],
     ["Paper", p.paper],
     ["Binding", p.binding],
@@ -107,19 +104,14 @@ export default async function BookPage({ params }: Params) {
 
   return (
     <>
-      <nav aria-label="Breadcrumb" className="content-grid pt-6 text-small text-ink-soft">
-        <ol className="flex flex-wrap gap-2">
-          <li>
-            <Link href="/books" className="hover:text-ink">
-              Books
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li aria-current="page" className="text-ink">
-            {p.title}
-          </li>
-        </ol>
-      </nav>
+      <Breadcrumbs
+        className="content-grid pt-6"
+        items={[
+          { name: "Books", href: "/books" },
+          ...(p.type === "COLOURING" ? [{ name: "Mandala colouring books", href: "/books/mandala-colouring-books" }] : []),
+          { name: p.title, href: `/books/${p.slug}` },
+        ]}
+      />
 
       <section className="content-grid grid gap-12 pt-8 pb-16 lg:grid-cols-12 lg:gap-16">
         <div className="lg:col-span-6">
@@ -148,7 +140,7 @@ export default async function BookPage({ params }: Params) {
             {p.values.map((v) => (
               <li key={v}>
                 <Link
-                  href={`/books?value=${v}`}
+                  href={COLLECTION_BY_SLUG.has(v) ? `/books/${v}` : `/books?value=${v}`}
                   className="inline-flex h-8 items-center rounded-full border border-line px-3 text-small hover:border-ink/40"
                 >
                   {valueMap.get(v)?.name ?? v}
@@ -373,6 +365,23 @@ export default async function BookPage({ params }: Params) {
         </section>
       ) : null}
 
+      {browse.length ? (
+        <nav aria-labelledby="browse-title" className="content-grid pb-16">
+          <h2 id="browse-title" className="text-h4">
+            Browse more like this
+          </h2>
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {browse.map((c) => (
+              <li key={c.slug}>
+                <Link href={`/books/${c.slug}`} className="inline-flex h-9 items-center rounded-full border border-line px-4 text-small hover:border-ink/40">
+                  {c.h1}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : null}
+
       <MobileBuyBar slug={p.slug} title={p.title} pricePaise={p.pricePaise} available={p.available} coverId={coverId} />
 
       <JsonLd
@@ -384,7 +393,7 @@ export default async function BookPage({ params }: Params) {
           isbn: p.isbn ?? undefined,
           ...(p.isbn ? { gtin13: p.isbn.replace(/\D/g, "") } : {}),
           sku: p.sku,
-          image: [p.cover, ...p.spreads].slice(0, 4).map((i) => absUrl(i.src)),
+          image: [...new Set([p.cover, ...p.spreads].map((i) => absoluteUrl(i.src)))].slice(0, 4),
           url: `${SITE.url}/books/${p.slug}`,
           author: { "@type": "Person", "@id": `${SITE.url}/about#bharathi`, name: SITE.author },
           illustrator: { "@type": "Person", "@id": `${SITE.url}/about#bharathi`, name: SITE.author },
@@ -417,37 +426,11 @@ export default async function BookPage({ params }: Params) {
               }
             : {}),
           numberOfPages: p.pages ?? undefined,
+          ...(p.binding?.toLowerCase().includes("paperback") ? { bookFormat: "https://schema.org/Paperback" } : {}),
           inLanguage: "en",
-          typicalAgeRange: p.ageMin ? `${p.ageMin}-${p.ageMax ?? ""}` : undefined,
+          typicalAgeRange: p.ageMin ? (p.ageMax ? `${p.ageMin}-${p.ageMax}` : `${p.ageMin}-`) : undefined,
           datePublished: p.publishedOn ?? undefined,
-          offers: {
-            "@type": "Offer",
-            priceCurrency: "INR",
-            price: (p.pricePaise / 100).toFixed(2),
-            availability: p.available === 0 ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
-            itemCondition: "https://schema.org/NewCondition",
-            url: `${SITE.url}/books/${p.slug}`,
-            seller: { "@type": "Organization", "@id": `${SITE.url}/#org`, name: SITE.name },
-            shippingDetails: {
-              "@type": "OfferShippingDetails",
-              shippingDestination: { "@type": "DefinedRegion", addressCountry: "IN" },
-              shippingRate: {
-                "@type": "MonetaryAmount",
-                currency: "INR",
-                value: (shipping.freeFromPaise != null && p.pricePaise >= shipping.freeFromPaise ? 0 : shipping.flatRatePaise / 100).toFixed(2),
-              },
-            },
-          },
-        }}
-      />
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          itemListElement: [
-            { "@type": "ListItem", position: 1, name: "Books", item: `${SITE.url}/books` },
-            { "@type": "ListItem", position: 2, name: p.title, item: `${SITE.url}/books/${p.slug}` },
-          ],
+          offers: offerSchema({ pricePaise: p.pricePaise, available: p.available, url: `${SITE.url}/books/${p.slug}`, shipping }),
         }}
       />
       {guide?.faqs.length ? (
@@ -463,7 +446,3 @@ export default async function BookPage({ params }: Params) {
   );
 }
 
-/** Uploaded images may already be full URLs (S3); files in /public are site paths. */
-function absUrl(src: string) {
-  return /^https?:\/\//.test(src) ? src : `${SITE.url}${src}`;
-}

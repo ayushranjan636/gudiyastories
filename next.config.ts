@@ -17,16 +17,22 @@ const s3Host =
 // Where the browser may load things from. Anything else (an injected script, a
 // form posting to another site, the site being framed) is blocked by the browser.
 const mediaHost = s3Host ? `https://${s3Host}` : "";
+// Google Analytics 4 is allowed only when a measurement ID is configured.
+const ga = /^G-[A-Z0-9]{4,20}$/.test((process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "").trim());
+const gaScript = ga ? " https://www.googletagmanager.com" : "";
+const gaConnect = ga ? " https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com" : "";
+const gaImg = ga ? " https://*.google-analytics.com https://www.googletagmanager.com" : "";
 const csp = [
   "default-src 'self'",
   // Next.js needs inline scripts for page data; Razorpay and Instagram load their own.
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'"} https://checkout.razorpay.com https://www.instagram.com`,
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'"} https://checkout.razorpay.com https://www.instagram.com https://static.cloudflareinsights.com${gaScript}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: https://i.ytimg.com https://*.razorpay.com https://*.cdninstagram.com https://www.instagram.com ${mediaHost}`.trim(),
+  `img-src 'self' data: blob: https://i.ytimg.com https://*.razorpay.com https://*.cdninstagram.com https://www.instagram.com${gaImg} ${mediaHost}`.trim(),
   `media-src 'self' blob: ${mediaHost}`.trim(),
   "font-src 'self' data:",
   // Browser uploads go straight to the bucket; Razorpay's window talks to its API.
-  `connect-src 'self' https://*.razorpay.com ${mediaHost} ${hostOf(process.env.S3_ENDPOINT) ? `https://${hostOf(process.env.S3_ENDPOINT)}` : ""}`.replace(/\s+/g, " ").trim(),
+  // cloudflareinsights.com: Cloudflare Web Analytics (cookie-free, real-visitor Core Web Vitals).
+  `connect-src 'self' https://*.razorpay.com https://cloudflareinsights.com${gaConnect} ${mediaHost} ${hostOf(process.env.S3_ENDPOINT) ? `https://${hostOf(process.env.S3_ENDPOINT)}` : ""}`.replace(/\s+/g, " ").trim(),
   "frame-src https://api.razorpay.com https://checkout.razorpay.com https://www.youtube-nocookie.com https://www.youtube.com https://www.instagram.com",
   "frame-ancestors 'self'",
   "form-action 'self'",

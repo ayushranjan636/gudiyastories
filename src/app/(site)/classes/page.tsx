@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { MessageCircle } from "lucide-react";
 import { getClasses } from "@/features/classes/repo";
 import { ClassCard } from "@/components/site/class-card";
 import { Reveal } from "@/components/motion/reveal";
 import { SITE, whatsappLink } from "@/config/site";
 
-export const metadata: Metadata = {
-  title: "Online classes",
-  description: `Live online classes taught by ${SITE.author}. See what each class covers, when it starts and what it costs, then enquire.`,
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Live online classes for children",
+  description: `Live online classes for children taught by early-years teacher ${SITE.author}. See what each class covers, when it starts and what it costs, then enquire.`,
+  path: "/classes",
+});
 export const revalidate = 60;
 
 const STEPS = [

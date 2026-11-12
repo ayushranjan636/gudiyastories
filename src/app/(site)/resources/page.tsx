@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Image from "next/image";
 import Link from "next/link";
 import { Download } from "lucide-react";
@@ -7,10 +8,12 @@ import { getPublishedResources } from "@/features/resources/repo";
 import { AfterTheStoryCard } from "@/components/site/after-the-story-card";
 import { SubscribeForm } from "./subscribe-form";
 
-export const metadata: Metadata = {
-  title: "Free resources",
-  description: "Free after-the-story question cards, colouring pages and reading tips from Gudiya Stories.",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Free printable story cards and colouring pages",
+  description:
+    "Free printable after-the-story question cards for Gudiya Stories picture books, plus colouring pages and short notes on reading aloud for parents and teachers.",
+  path: "/resources",
+});
 
 const KIND_LABEL: Record<string, string> = {
   AFTER_THE_STORY: "After the story card",

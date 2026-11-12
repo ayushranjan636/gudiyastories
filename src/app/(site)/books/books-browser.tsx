@@ -106,6 +106,8 @@ export function BooksBrowser({ items, values, initial }: { items: Item[]; values
       </div>
 
       <div className="flex items-baseline justify-between gap-4 py-6" aria-live="polite">
+        {/* Heading for the grid, for screen readers and a correct h1 → h2 → h3 outline. */}
+        <h2 className="sr-only">{activeValue ? `Books about ${activeValue.name.toLowerCase()}` : "All books and sets"}</h2>
         <p className="text-ink-soft">
           {results.length} {results.length === 1 ? "title" : "titles"}
           {activeValue ? (

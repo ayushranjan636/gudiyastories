@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { getPublishedPosts } from "@/features/blog/repo";
 import { MediaView } from "@/components/ui/media-view";
 import { formatDate } from "@/lib/format";
 import { ButtonLink } from "@/components/ui/button";
 
-export const metadata: Metadata = {
-  title: "Blog",
-  description: "Short notes by S.V. Bharathi on reading aloud, picture books and the conversations that come after them.",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Blog: reading aloud and picture books",
+  description:
+    "Short notes by early-years teacher S.V. Bharathi on reading aloud to children, choosing picture books and the conversations that come after them.",
+  path: "/blog",
+});
 export const revalidate = 60; // scheduled posts appear within a minute; saves refresh instantly
 
 export default async function BlogPage() {
